@@ -1,4 +1,6 @@
-# CanteenOS
+# CanteenOS (Major Project Part 1)
+
+**Live Website:** [https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/](https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/)
 
 ## Run with the PHP and SQLite backend
 
