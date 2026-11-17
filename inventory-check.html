@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <aside id="sidebar"><button class="nav-link" data-page="overview"></button><button class="nav-link" data-page="orders"></button><button class="nav-link" data-page="menu"></button><button class="nav-link" data-page="inventory"></button><button class="nav-link" data-page="reports"></button></aside>
+    <span id="breadcrumb-page"></span><span id="today-label"></span><span id="nav-order-count"></span><button id="mobile-menu"></button>
+    <main id="page-content"></main><div id="toast"></div><div id="modal-backdrop" hidden><section id="modal"></section></div>
+    <pre id="result"></pre>
+    <script>
+      localStorage.setItem("canteenos-data-v1", JSON.stringify({
+        menu: [
+          { id: "m1", name: "Masala Dosa", category: "Breakfast", price: 65 },
+          { id: "m2", name: "Veg Thali", category: "Meals", price: 120 },
+          { id: "m3", name: "Paneer Roll", category: "Snacks", price: 85 },
+          { id: "m4", name: "Filter Coffee", category: "Drinks", price: 30 },
+          { id: "m5", name: "Samosa (2 pcs)", category: "Snacks", price: 35 },
+          { id: "m6", name: "Fresh Lime Soda", category: "Drinks", price: 40 }
+        ],
+        orders: [],
+        inventory: [
+          { id: "i1", name: "Rice", unit: "kg", stock: 18, minimum: 10 },
+          { id: "i2", name: "Potatoes", unit: "kg", stock: 6, minimum: 8 },
+          { id: "i3", name: "Paneer", unit: "kg", stock: 4, minimum: 3 },
+          { id: "i4", name: "Cooking oil", unit: "L", stock: 3, minimum: 5 },
+          { id: "i5", name: "Coffee powder", unit: "kg", stock: 2, minimum: 1 }
+        ],
+        menuDefaultsVersion: 4
+      }));
+    </script>
+    <script src="app.js"></script>
+    <script>
+      const results = [];
+      const check = (name, passed) => results.push(`${passed ? "PASS" : "FAIL"} ${name}`);
+      try {
+        const once = data.inventory.length;
+        const loadedAgain = loadData();
+        check("legacy inventory receives ingredient list", once === 60);
+        check("inventory migration is idempotent", loadedAgain.inventory.length === once && new Set(loadedAgain.inventory.map((item) => item.id)).size === once);
+        check("common menu ingredients are present", loadedAgain.inventory.some((item) => item.name === "Wheat flour") && loadedAgain.inventory.some((item) => item.name === "Chicken") && loadedAgain.inventory.some((item) => item.name === "Prawns"));
+        document.querySelector('.nav-link[data-page="inventory"]').click();
+        check("all ingredients render in inventory", document.querySelectorAll(".data-panel tbody tr").length === 60);
+        document.querySelector('[data-action="new-inventory-item"]').click();
+        check("meat and seafood category is available", [...document.querySelector("#ingredient-category").options].some((option) => option.value === "Meat & seafood"));
+      } catch (error) {
+        results.push(`ERROR ${error.message}`);
+      }
+      document.querySelector("#result").textContent = results.join("\n");
+      localStorage.removeItem("canteenos-data-v1");
+    </script>
+  </body>
+</html>

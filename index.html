@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f6f2">
+    <title>CanteenOS — Canteen Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#" aria-label="CanteenOS home">
+          <span class="brand-mark">R<span>.</span></span>
+          <span class="brand-name">canteen<span>ROYAL</span></span>
+        </a>
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="navigation" aria-label="Main navigation">
+          <button class="nav-link active" data-page="overview"><span class="nav-icon">◫</span>Overview</button>
+          <button class="nav-link" data-page="orders"><span class="nav-icon">▤</span>Orders <span class="nav-count" id="nav-order-count">0</span></button>
+          <button class="nav-link" data-page="menu"><span class="nav-icon">▦</span>Menu</button>
+          <button class="nav-link" data-page="inventory"><span class="nav-icon">▧</span>Inventory</button>
+          <button class="nav-link" data-page="reports"><span class="nav-icon">↗</span>Sales & reports</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-tip">
+            <span class="tip-icon">✳</span>
+            <strong>Good service starts here.</strong>
+            <span>Keep your menu fresh and your stock ready.</span>
+          </div>
+          <div class="profile">
+            <div class="avatar">RC</div>
+            <div class="profile-copy"><strong>Royal's Canteen</strong><span>Administrator</span></div>
+            <span class="profile-dots">···</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button>
+          <div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb-page">Overview</strong></div>
+          <div class="topbar-actions">
+            <span class="today-label" id="today-label"></span>
+            <span class="status-pill"><span></span> Canteen open</span>
+          </div>
+        </header>
+        <section class="page-content" id="page-content" aria-live="polite"></section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
