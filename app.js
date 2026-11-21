@@ -2,6 +2,7 @@ const STORAGE_KEY = "canteenos-data-v1";
 const PAGE_TITLES = {
   overview: "Overview",
   orders: "Orders",
+  notifications: "Notifications",
   menu: "Menu",
   inventory: "Inventory",
   reports: "Sales & reports"
@@ -263,7 +264,7 @@ function loadData() {
 }
 
 let data = loadData();
-let activePage = "overview";
+let activePage = (document.body && document.body.dataset.defaultPage) || "overview";
 let toastTimer;
 let serverSync = Promise.resolve();
 let serverApiEnabled = window.location.protocol !== "file:" && !window.location.hostname.endsWith(".github.io");
@@ -553,10 +554,33 @@ function renderReports() {
     <p class="report-note">Gross profit is sales minus the recorded cost to prepare items sold. Stock purchases are tracked separately and may include ingredients still in inventory.</p>`;
 }
 
+function renderNotifications() {
+  if (window.CanteenNotifications) {
+    return window.CanteenNotifications.renderNotificationsView();
+  }
+  return emptyState("🔔", "Notifications unavailable", "Could not load the notifications module.");
+}
+
+function updateNotificationBadge() {
+  const badge = document.querySelector("#nav-notif-count");
+  if (!badge || !window.CanteenNotifications) return;
+  const count = window.CanteenNotifications.getUnreadCount();
+  badge.textContent = count;
+  badge.classList.toggle("has-unread", count > 0);
+}
+
 function renderPage() {
-  const renderers = { overview: renderOverview, orders: renderOrders, menu: renderMenu, inventory: renderInventory, reports: renderReports };
+  const renderers = {
+    overview: renderOverview,
+    orders: renderOrders,
+    notifications: renderNotifications,
+    menu: renderMenu,
+    inventory: renderInventory,
+    reports: renderReports
+  };
   pageContent.innerHTML = renderers[activePage]();
   document.querySelector("#nav-order-count").textContent = data.orders.filter((order) => ["Preparing", "Ready"].includes(order.status)).length;
+  updateNotificationBadge();
   if (activePage === "orders") {
     renderOrdersTable();
     document.querySelector("#order-search").addEventListener("input", renderOrdersTable);
@@ -801,10 +825,50 @@ document.addEventListener("click", (event) => {
   if (action === "advance-order") {
     const order = data.orders.find((entry) => entry.id === id);
     if (!order) return;
-    order.status = order.status === "Preparing" ? "Ready" : order.status === "Ready" ? "Completed" : order.status;
+    const nextStatus = order.status === "Preparing" ? "Ready" : order.status === "Ready" ? "Completed" : order.status;
+    order.status = nextStatus;
     if (saveData()) {
+      if (window.CanteenNotifications) {
+        window.CanteenNotifications.updateOrderStatus(order.id, nextStatus).then(() => {
+          updateNotificationBadge();
+        });
+      }
       renderPage();
-      showToast(`Order #${order.id} marked ${order.status.toLowerCase()}.`);
+      const extra = nextStatus === "Completed" ? ' User notified: "The delivery coming near to the user".' : "";
+      showToast(`Order #${order.id} marked ${order.status.toLowerCase()}.${extra}`);
+    }
+  }
+  if (action === "notif-set-status") {
+    const nextStatus = actionButton.dataset.status;
+    if (!id || !nextStatus) return;
+    const order = data.orders.find((entry) => String(entry.id) === String(id));
+    if (order) {
+      order.status = nextStatus;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+    if (window.CanteenNotifications) {
+      window.CanteenNotifications.updateOrderStatus(id, nextStatus).then(() => {
+        renderPage();
+        const msg = nextStatus === "Completed"
+          ? `Order #${id} completed! User bell notified: "The delivery coming near to the user".`
+          : `Order #${id} marked ${nextStatus}! Student notified.`;
+        showToast(msg);
+      });
+    }
+  }
+  if (action === "notif-filter") {
+    const filter = actionButton.dataset.filter || "All";
+    if (window.CanteenNotifications) {
+      window.CanteenNotifications.setFilter(filter);
+      renderPage();
+    }
+  }
+  if (action === "notif-mark-all-read") {
+    if (window.CanteenNotifications) {
+      window.CanteenNotifications.markAllRead().then(() => {
+        renderPage();
+        showToast("All order receipt notifications marked as read.");
+      });
     }
   }
   if (action === "delete-menu") {
@@ -837,5 +901,86 @@ document.querySelector("#today-label").textContent = new Intl.DateTimeFormat("en
   weekday: "short", day: "numeric", month: "short", year: "numeric"
 }).format(new Date());
 
+document.querySelectorAll(".nav-link").forEach((link) => {
+  link.classList.toggle("active", link.dataset.page === activePage);
+});
+const breadcrumbEl = document.querySelector("#breadcrumb-page");
+if (breadcrumbEl) breadcrumbEl.textContent = PAGE_TITLES[activePage] || "Overview";
+
 renderPage();
 loadServerData();
+
+if (window.CanteenNotifications) {
+  window.CanteenNotifications.startPolling({
+    onSync: ({ adminNotifications, remoteOrders, newlyArrived, changed }) => {
+      let ordersChanged = false;
+      if (Array.isArray(remoteOrders)) {
+        const before = JSON.stringify(data.orders);
+        data.orders = remoteOrders;
+        if (JSON.stringify(data.orders) !== before) {
+          ordersChanged = true;
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+        }
+      } else {
+        // Static / GitHub Pages mode: sync orders from shared localStorage & incoming receipts
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && Array.isArray(parsed.orders) && JSON.stringify(parsed.orders) !== JSON.stringify(data.orders)) {
+              data.orders = parsed.orders;
+              ordersChanged = true;
+            }
+          }
+        } catch {}
+        if (Array.isArray(adminNotifications) && adminNotifications.length > 0) {
+          const existingIds = new Set(data.orders.map((o) => String(o.id)));
+          for (const n of adminNotifications) {
+            if (n && n.orderId && !existingIds.has(String(n.orderId))) {
+              const items = (Array.isArray(n.items) ? n.items : []).map((it) => ({
+                name: it.name,
+                qty: Number(it.qty || 1),
+                unitPrice: Number(it.price ?? it.unitPrice ?? 0),
+                unitCost: Math.round(Number(it.price ?? it.unitPrice ?? 0) * 45) / 100
+              }));
+              data.orders.unshift({
+                id: String(n.orderId),
+                customer: n.customerName || "Campus Student",
+                studentAccountName: (n.receipt && n.receipt.studentAccountName) || n.customerName || "Campus Student",
+                items,
+                total: Number(n.total || 0),
+                status: n.status || "Preparing",
+                time: new Date(n.createdAt || Date.now()).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+                payment: n.paymentMethod === "UPI" ? "UPI" : "Cash",
+                day: todayKey(),
+                source: "user-web"
+              });
+              existingIds.add(String(n.orderId));
+              ordersChanged = true;
+            }
+          }
+          if (ordersChanged) {
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch {}
+          }
+        }
+      }
+      updateNotificationBadge();
+      document.querySelector("#nav-order-count").textContent = data.orders.filter((order) => ["Preparing", "Ready"].includes(order.status)).length;
+      if (newlyArrived.length > 0) {
+        const latest = newlyArrived[0];
+        showToast(`🔔 New Order Receipt #${latest.orderId} from ${latest.customerName} (${money(latest.total)})!`);
+      }
+      if ((changed || ordersChanged) && modalBackdrop.hidden) {
+        if (activePage === "notifications" || activePage === "overview") {
+          renderPage();
+        } else if (activePage === "orders") {
+          renderOrdersTable();
+        }
+      }
+    }
+  });
+}

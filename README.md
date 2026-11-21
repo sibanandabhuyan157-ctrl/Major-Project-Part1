@@ -1,30 +1,55 @@
-# CanteenOS (Major Project Part 1)
+# CanteenOS — Royal's Canteen (Major Project Part 1 + Connected User Web)
 
-**Live Website:** [https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/](https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/)
+**Live Public Websites (GitHub Pages):**
+- **Admin Dashboard:** [https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/](https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/)
+- **Admin Notifications Page:** [https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/notifications.html](https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/notifications.html)
+- **User Web (Student Ordering Portal):** [https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/user/](https://sibanandabhuyan157-ctrl.github.io/Major-Project-Part1/user/) (also `/user/index1.html`)
 
-## Run with the PHP and SQLite backend
+## Connected Architecture (Database + Java + PHP + JS)
 
-Install PHP 8.1 or later with the PDO SQLite extension enabled, open a terminal in this project folder, and run:
+`Major Project Part 1` (Admin Dashboard & Notifications Page) and `User Web` (Student Ordering Portal) share the same backend API and database:
+
+- **SQLite Database Schema:** `database/schema.sql` (and mirrored in `../User Web/database/schema.sql`)
+- **PHP + SQLite Backend:** `api.php` & `router.php` (plus `../User Web/api.php` & `../User Web/router.php`)
+- **Java Backend:** `CanteenServer.java` (plus `../User Web/UserWebServer.java`)
+- **Frontend JS:** `app.js`, `notifications.js`, and `../User Web/user-app.js`
+
+### End-to-End Order & Notification Flow
+1. A student places and confirms an order in **User Web** (`index1.html`).
+2. The full **Order Receipt** is saved to the shared database and appears immediately in **Major Project Part 1 → Notifications** (`notifications.html` or the **Notifications** sidebar tab in `index.html`) and **Orders**.
+3. When the Administrator clicks **Ready**, then **Completed**, the student's **Bell Icon** in `User Web/index1.html` lights up with the alert: **"The delivery coming near to the user"**.
+
+---
+
+## Run with the Java Backend (Recommended — Zero Extra Dependencies)
+
+Open a terminal in `Major Project Part 1` and run:
+
+```powershell
+javac CanteenServer.java
+java CanteenServer
+```
+
+Then open in your browser:
+- **Admin Dashboard:** [http://127.0.0.1:8081/](http://127.0.0.1:8081/)
+- **Admin Notifications Page:** [http://127.0.0.1:8081/notifications.html](http://127.0.0.1:8081/notifications.html)
+- **Connected User Web (Student Portal):** [http://127.0.0.1:8081/user/index1.html](http://127.0.0.1:8081/user/index1.html)
+
+*(Optional: you can also run `UserWebServer.java` inside `User Web` on port `8082`; both Java servers share the same data files on disk.)*
+
+---
+
+## Run with the PHP and SQLite Backend
+
+Install PHP 8.1+ with PDO SQLite enabled, open a terminal in `Major Project Part 1`, and run:
 
 ```powershell
 php -S 127.0.0.1:8000 router.php
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Keep the terminal open while using the app; press `Ctrl+C` to stop the server.
+Then open in your browser:
+- **Admin Dashboard:** [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Admin Notifications Page:** [http://127.0.0.1:8000/notifications.html](http://127.0.0.1:8000/notifications.html)
+- **Connected User Web (Student Portal):** [http://127.0.0.1:8000/user/index1.html](http://127.0.0.1:8000/user/index1.html)
 
-The PHP API stores menu items, orders, inventory, purchases, and app settings in `database/canteen.sqlite`, using the schema in `database/schema.sql`. The database and tables are created automatically when the app is first used.
-
-## Run with the Java backend
-
-Install a JDK, open a terminal in this project folder, and run:
-
-```powershell
-javac -d out CanteenServer.java
-java -cp out CanteenServer
-```
-
-Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser. Keep the terminal open while using the app; press `Ctrl+C` to stop the server.
-
-The Java server serves the existing HTML, CSS, and JavaScript files. The app continues to use browser storage and also syncs its data with the server, which saves it in `canteen-data.json` in this folder.
-
-Use either backend at a time. Opening `index.html` directly still works, but server persistence is only available when the app is opened through a backend.
+The PHP API stores menu items, orders, inventory, purchases, students, admin receipt notifications, and user bell notifications in `database/canteen.sqlite` using `database/schema.sql`.

@@ -21,6 +21,7 @@
         <nav class="navigation" aria-label="Main navigation">
           <button class="nav-link active" data-page="overview"><span class="nav-icon">◫</span>Overview</button>
           <button class="nav-link" data-page="orders"><span class="nav-icon">▤</span>Orders <span class="nav-count" id="nav-order-count">0</span></button>
+          <button class="nav-link" data-page="notifications"><span class="nav-icon">🔔</span>Notifications <span class="nav-count" id="nav-notif-count">0</span></button>
           <button class="nav-link" data-page="menu"><span class="nav-icon">▦</span>Menu</button>
           <button class="nav-link" data-page="inventory"><span class="nav-icon">▧</span>Inventory</button>
           <button class="nav-link" data-page="reports"><span class="nav-icon">↗</span>Sales & reports</button>
@@ -55,6 +56,7 @@
     <div class="modal-backdrop" id="modal-backdrop" hidden>
       <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
     </div>
+    <script src="notifications.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
