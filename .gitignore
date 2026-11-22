@@ -3,5 +3,6 @@
 /database/notifications-store.json
 /database/users-db.json
 /database/order-history-db.json
+*.tmp
 *.class
 /out/
