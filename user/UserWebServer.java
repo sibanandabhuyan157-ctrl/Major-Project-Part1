@@ -28,7 +28,7 @@ public class UserWebServer {
         s.createContext("/api/", UserWebServer::api);
         s.createContext("/", UserWebServer::serve);
         s.start();
-        System.out.println("User Web running: http://127.0.0.1:" + port + "/index1.html  |  Admin: http://127.0.0.1:" + port + "/admin/");
+        System.out.println("User Web running: http://127.0.0.1:" + port + "/index1.html");
     }
 
     @SuppressWarnings("unchecked")
@@ -39,18 +39,6 @@ public class UserWebServer {
         String p = ex.getRequestURI().getPath(), m = ex.getRequestMethod();
         try {
             if ("/api/data".equals(p) && "GET".equals(m)) synchronized (LOCK) { if (!Files.exists(dataFile)) json(ex, 404, mp("error", "No saved data")); else send(ex, 200, "application/json; charset=utf-8", Files.readAllBytes(dataFile)); return; }
-            if ("/api/admin/users".equals(p) && "GET".equals(m)) {
-                synchronized (LOCK) {
-                    List<Object> hist = ls(readHist().get("history")); Map<String, double[]> stats = new HashMap<>();
-                    for (Object x : hist) { Map<String, Object> o = mpOf(x); String k = s(o.get("studentAccountName")).toLowerCase(Locale.ROOT); double[] st = stats.computeIfAbsent(k, __ -> new double[2]); st[0]++; st[1] += num(o.get("total"), 0); }
-                    List<Object> safeUsers = new ArrayList<>();
-                    for (Object x : ls(readUsers().get("users"))) {
-                        Map<String, Object> u = mpOf(x); double[] st = stats.getOrDefault(s(u.get("name")).toLowerCase(Locale.ROOT), new double[2]);
-                        safeUsers.add(mp("id", u.get("id"), "name", s(u.get("name")), "email", s(u.get("email")), "regNo", s(u.get("regNo")), "hostel", s(u.get("hostel")), "roomNo", s(u.get("roomNo")), "phone", s(u.get("phone")), "createdAt", s(u.get("createdAt")), "lastOrderAt", s(u.get("lastOrderAt")), "orderCount", (int) st[0], "totalSpent", st[1]));
-                    }
-                    json(ex, 200, mp("users", safeUsers, "passwordProtected", true)); return;
-                }
-            }
             if ("/api/order-history".equals(p) && "GET".equals(m)) {
                 String stu = qparam(ex.getRequestURI().getRawQuery(), "student");
                 synchronized (LOCK) { List<Object> hist = ls(readHist().get("history")); if (!stu.isEmpty()) hist = filter(hist, o -> stu.equalsIgnoreCase(s(o.get("studentAccountName")))); json(ex, 200, mp("history", hist)); return; }
@@ -156,10 +144,8 @@ public class UserWebServer {
     private static void serve(HttpExchange ex) throws IOException {
         if (!"GET".equals(ex.getRequestMethod())) { ex.getResponseHeaders().set("Allow", "GET"); send(ex, 405, "text/plain", "Method not allowed".getBytes()); return; }
         String p = ex.getRequestURI().getPath();
-        Map<String, Path> routes = Map.of("/", userDir.resolve("index1.html"), "/index.html", userDir.resolve("index1.html"), "/index1.html", userDir.resolve("index1.html"), "/styles.css", userDir.resolve("styles.css"), "/user-app.js", userDir.resolve("user-app.js"), "/admin", adminDir.resolve("index.html"), "/admin/", adminDir.resolve("index.html"), "/admin/index.html", adminDir.resolve("index.html"), "/admin/notifications.html", adminDir.resolve("notifications.html"), "/admin/notifications.js", adminDir.resolve("notifications.js"));
+        Map<String, Path> routes = Map.of("/", userDir.resolve("index1.html"), "/index.html", userDir.resolve("index1.html"), "/index1.html", userDir.resolve("index1.html"), "/styles.css", userDir.resolve("styles.css"), "/user-app.js", userDir.resolve("user-app.js"));
         Path f = routes.get(p);
-        if (f == null && "/admin/app.js".equals(p)) f = adminDir.resolve("app.js");
-        if (f == null && "/admin/styles.css".equals(p)) f = adminDir.resolve("styles.css");
         if (f == null || !Files.isRegularFile(f)) { send(ex, 404, "text/plain", "Not found".getBytes()); return; }
         String fn = f.getFileName().toString(), ct = fn.endsWith(".css") ? "text/css" : fn.endsWith(".js") ? "text/javascript" : "text/html";
         send(ex, 200, ct + "; charset=utf-8", Files.readAllBytes(f));
