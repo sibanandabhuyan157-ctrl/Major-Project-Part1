@@ -81,7 +81,7 @@
     const tabs = ["All", "Unread", "Preparing", "Ready", "Completed"];
     const shown = list.filter((n) => filter === "All" || (filter === "Unread" ? !n.isRead : n.status === filter));
     const cnt = (fn) => list.filter(fn).length;
-    const portal = location.protocol === "file:" ? "../User Web/index1.html" : "user/index1.html";
+    const portal = "user/index1.html";
     const cards = shown.map((n) => {
       const rows = (n.items || []).map((it) => { const q = Number(it.qty || 1), p = Number(it.price ?? it.unitPrice ?? 0); return `<tr><td class="cell-strong">${esc(it.name)}</td><td>${q}</td><td>${inr(p)}</td><td class="cell-strong">${inr(p * q)}</td></tr>`; }).join("");
       const act = n.status === "Preparing"

@@ -468,6 +468,10 @@ document.querySelectorAll(".nav-link").forEach((l) => l.classList.toggle("active
 const bc = document.querySelector("#breadcrumb-page"); if (bc) bc.textContent = PAGE_TITLES[activePage] || "Overview";
 renderPage(); loadServerData();
 
+window.addEventListener("storage", (e) => {
+  if ((e.key === USERS_DB_KEY || e.key === HISTORY_DB_KEY) && activePage === "users") loadUsersAndHistory();
+});
+
 window.CanteenNotifications?.startPolling({
   onSync: ({ adminNotifications, remoteOrders, newlyArrived, changed }) => {
     let oc = false;

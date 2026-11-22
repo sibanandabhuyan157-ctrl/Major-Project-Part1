@@ -250,7 +250,7 @@ async function handleSignIn(e) {
   if (!matched) return showAuthFeedback('Invalid Student Name or Password. Please check or Register first.', 'error');
   state.currentUser = { name: matched.name, email: matched.email }; state.notifInitialized = false;
   safeWriteJSON(STORAGE_KEYS.CURRENT_USER, state.currentUser); renderHeaderAuth(); $('signInForm').reset();
-  const pending = state.pendingAction; closeAuthModal(); showToast(`Welcome back, ${matched.name}!`, 'success'); pollUserNotifications();
+  const pending = state.pendingAction; closeAuthModal(); showToast(`Welcome back, ${matched.name}!`, 'success'); syncOrderHistoryFromBackend(); pollUserNotifications();
   if (typeof pending === 'function') setTimeout(() => pending(), 120);
 }
 
@@ -500,13 +500,70 @@ function openOrdersModal() {
 const downloadOrderByIndex = (i) => { const o = getUserOrders()[i]; if (o) downloadReceiptPDF(o); };
 const closeOrdersModal = () => toggleModal('ordersModal', false);
 
+const ADMIN_CAT_MAP = { Breakfast: 'Quick Snacks', Snacks: 'Quick Snacks', Meals: 'Full Meals', 'Non-Veg': 'Full Meals', Drinks: 'Beverages & Combos', Desserts: 'Beverages & Combos' };
+const ADMIN_PHOTO_FALLBACKS = {
+  'Quick Snacks': [['1601050690597-df0568f70950', 'Fresh Canteen Snack'], ['1626700051175-6818013e1d4f', 'Served Hot'], ['1567337710282-00832b415979', 'Royal Canteen Special']],
+  'Full Meals': [['1585937421612-70a008356fbe', 'Wholesome Meal'], ['1563379091339-03b21ab4a4f8', 'Prepared Fresh'], ['1606491956689-2ea866880c84', 'Royal Canteen Kitchen']],
+  'Beverages & Combos': [['1461023058943-07fcbe16d735', 'Chilled & Fresh'], ['1572490122747-3968b75cc699', 'Made to Order'], ['1571934811356-5cc061b6821f', 'Canteen Refreshment']],
+};
+
+async function syncMenuFromAdmin() {
+  let adminMenu = null;
+  if (backendApiReachable) {
+    try { const r = await fetch(`${backendApiBase}/api/data`); if (r.ok && (r.headers.get('content-type') || '').includes('application/json')) { const d = await r.json(); if (Array.isArray(d.menu)) adminMenu = d.menu; } } catch {}
+  }
+  if (!adminMenu) {
+    const loc = safeReadJSON(STORAGE_KEYS.SHARED_CANTEEN_DATA, null);
+    if (loc && Array.isArray(loc.menu)) adminMenu = loc.menu;
+  }
+  if (!adminMenu) return;
+  let updated = false;
+  for (const am of adminMenu) {
+    if (!am?.name || !Number.isFinite(Number(am.price))) continue;
+    const match = MENU_ITEMS.find((m) => m.name.toLowerCase() === am.name.toLowerCase() || m.id === `admin-${am.id}`);
+    if (match) {
+      if (match.price !== Number(am.price)) { match.price = Number(am.price); updated = true; }
+    } else if (String(am.id || '').startsWith('m') && Number(String(am.id).slice(1)) > 100) {
+      const cat = ADMIN_CAT_MAP[am.category] || 'Full Meals';
+      const imgs = (ADMIN_PHOTO_FALLBACKS[cat] || ADMIN_PHOTO_FALLBACKS['Full Meals']).map(([u, caption], i) => ({ url: U(u), caption, bg: ['245C43', '194733', '2F6E51'][i % 3] }));
+      MENU_ITEMS.push({ id: `admin-${am.id}`, name: am.name, category: cat, carousels: [cat, 'Trending on Campus'], price: Number(am.price), veg: am.category !== 'Non-Veg', rating: 4.7, reviews: 42, deliveryTime: 6, description: am.description || `Freshly prepared at Royal's Canteen (${am.category}).`, ingredients: ['Fresh Kitchen Ingredients', 'Royal Canteen Spices', 'Prepared to Order'], images: imgs });
+      updated = true;
+    }
+  }
+  if (updated) { renderCarousels(); renderFullMenuGrid(); }
+}
+
+async function syncOrderHistoryFromBackend() {
+  if (!state.currentUser || !backendApiReachable) return;
+  try {
+    const r = await fetch(`${backendApiBase}/api/order-history?student=${encodeURIComponent(state.currentUser.name)}`);
+    if (!r.ok || !(r.headers.get('content-type') || '').includes('application/json')) return;
+    const d = await r.json();
+    if (!Array.isArray(d.history) || !d.history.length) return;
+    const all = getAllOrders(), byId = new Map(all.map((o) => [String(o.orderId), o]));
+    let changed = false;
+    d.history.forEach((h) => {
+      const ex = byId.get(String(h.orderId));
+      if (!ex) { all.push(h); changed = true; }
+      else if (h.status && ex.status !== h.status) { ex.status = h.status; changed = true; }
+    });
+    if (changed) {
+      all.sort((a, b) => String(b.createdAt || b.orderId).localeCompare(String(a.createdAt || a.orderId)));
+      safeWriteJSON(STORAGE_KEYS.ORDERS, all);
+      updateHeaderCounts();
+    }
+  } catch {}
+}
+
 async function initApp() {
   seedDemoStudent(); state.currentUser = safeReadJSON(STORAGE_KEYS.CURRENT_USER, null);
   renderHeaderAuth(); renderCarousels(); renderCategoryFilters(); renderFullMenuGrid(); renderBellNotifications();
-  await detectBackendApi(); await pollUserNotifications();
+  await detectBackendApi(); await syncMenuFromAdmin(); await syncOrderHistoryFromBackend(); await pollUserNotifications();
   if (notifPollTimer) clearInterval(notifPollTimer);
   notifPollTimer = setInterval(pollUserNotifications, 2500);
-  addEventListener('storage', (e) => { if (e.key === STORAGE_KEYS.SHARED_NOTIFICATIONS || e.key === STORAGE_KEYS.SHARED_CANTEEN_DATA) pollUserNotifications(); });
+  addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEYS.SHARED_NOTIFICATIONS || e.key === STORAGE_KEYS.SHARED_CANTEEN_DATA) { pollUserNotifications(); syncMenuFromAdmin(); }
+  });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAuthModal(); closeItemModal(); closeBasket(); closeOrdersModal(); closeMobileSidebar(); } });
 }
 window.addEventListener('DOMContentLoaded', initApp);
