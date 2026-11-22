@@ -481,15 +481,332 @@ function renderOrdersTable() {
   }).join("")}</tbody></table></div>` : emptyState("⌕", "No matching orders", "Try changing your search or status filter.");
 }
 
+const MENU_IMAGE_POOLS = {
+  dosa: [
+    "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=700&q=80"
+  ],
+  idli: [
+    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=700&q=80"
+  ],
+  paratha: [
+    "https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80"
+  ],
+  biryani: [
+    "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1633945274405-b6c8069047b0?auto=format&fit=crop&w=700&q=80"
+  ],
+  chicken: [
+    "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&w=700&q=80"
+  ],
+  egg: [
+    "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=700&q=80"
+  ],
+  seafood: [
+    "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=700&q=80"
+  ],
+  paneer: [
+    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=700&q=80"
+  ],
+  roll: [
+    "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80"
+  ],
+  samosa: [
+    "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=700&q=80"
+  ],
+  sandwich: [
+    "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1550507992-eb63ffee0847?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1539252554453-80ab65ce3586?auto=format&fit=crop&w=700&q=80"
+  ],
+  burger: [
+    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=700&q=80"
+  ],
+  fries: [
+    "https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1518013431117-eb1465fa5752?auto=format&fit=crop&w=700&q=80"
+  ],
+  noodles: [
+    "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=700&q=80"
+  ],
+  pasta: [
+    "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=700&q=80"
+  ],
+  thali: [
+    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80"
+  ],
+  coffee: [
+    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80"
+  ],
+  tea: [
+    "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?auto=format&fit=crop&w=700&q=80"
+  ],
+  drink: [
+    "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=700&q=80"
+  ],
+  dessert: [
+    "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=700&q=80"
+  ],
+  fruit: [
+    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=700&q=80"
+  ]
+};
+
+const menuCardPhotoIndex = new Map();
+const menuSwipeStartX = new Map();
+
+function menuFallbackPhoto(name, index) {
+  return `https://placehold.co/600x380/245C43/FFFFFF?text=${encodeURIComponent(`${name} (${index + 1}/3)`)}`;
+}
+
+function getMenuItemImages(item) {
+  if (Array.isArray(item.images) && item.images.length > 0) return item.images;
+  const label = `${item.name || ""} ${item.category || ""}`.toLowerCase();
+  let pool = MENU_IMAGE_POOLS.thali;
+  if (/dosa|uttapam/.test(label)) pool = MENU_IMAGE_POOLS.dosa;
+  else if (/idli|poha|upma/.test(label)) pool = MENU_IMAGE_POOLS.idli;
+  else if (/paratha|bhature/.test(label)) pool = MENU_IMAGE_POOLS.paratha;
+  else if (/biryani|pulao/.test(label)) pool = MENU_IMAGE_POOLS.biryani;
+  else if (/fish|prawn/.test(label)) pool = MENU_IMAGE_POOLS.seafood;
+  else if (/egg|omelette/.test(label)) pool = MENU_IMAGE_POOLS.egg;
+  else if (/pasta/.test(label)) pool = MENU_IMAGE_POOLS.pasta;
+  else if (/noodle|manchurian/.test(label)) pool = MENU_IMAGE_POOLS.noodles;
+  else if (/burger|vada pav/.test(label)) pool = MENU_IMAGE_POOLS.burger;
+  else if (/sandwich/.test(label)) pool = MENU_IMAGE_POOLS.sandwich;
+  else if (/fries/.test(label)) pool = MENU_IMAGE_POOLS.fries;
+  else if (/roll|wrap|shawarma/.test(label)) pool = MENU_IMAGE_POOLS.roll;
+  else if (/samosa|kachori|pakora|dhokla|chaat|momos/.test(label)) pool = MENU_IMAGE_POOLS.samosa;
+  else if (/chicken|mutton|kebab|tandoori|lollipop|keema/.test(label)) pool = MENU_IMAGE_POOLS.chicken;
+  else if (/paneer/.test(label)) pool = MENU_IMAGE_POOLS.paneer;
+  else if (/coffee|chocolate/.test(label) && !/brownie/.test(label)) pool = MENU_IMAGE_POOLS.coffee;
+  else if (/chai|tea/.test(label)) pool = MENU_IMAGE_POOLS.tea;
+  else if (/lassi|soda|buttermilk|milk|shake|drink/.test(label)) pool = MENU_IMAGE_POOLS.drink;
+  else if (/brownie|ice cream|gulab|dessert/.test(label)) pool = MENU_IMAGE_POOLS.dessert;
+  else if (/fruit/.test(label)) pool = MENU_IMAGE_POOLS.fruit;
+
+  // Deterministic rotation per item ID so adjacent dishes in a category show varied hero images
+  const seed = [...String(item.id || item.name)].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const offset = seed % pool.length;
+  return pool.map((_, idx) => pool[(idx + offset) % pool.length]);
+}
+
+function updateMenuCardPhoto(itemId, newIndex) {
+  const item = data.menu.find((entry) => entry.id === itemId);
+  if (!item) return;
+  const images = getMenuItemImages(item);
+  const total = images.length;
+  const idx = ((newIndex % total) + total) % total;
+  menuCardPhotoIndex.set(itemId, idx);
+
+  const card = pageContent.querySelector(`.menu-card[data-menu-id="${CSS.escape(itemId)}"]`);
+  if (!card) return;
+  const img = card.querySelector(".menu-card-img");
+  const counter = card.querySelector(".menu-photo-counter");
+  const dots = card.querySelectorAll(".menu-dot");
+  if (img) {
+    const fallback = menuFallbackPhoto(item.name, idx);
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = fallback;
+    };
+    img.src = images[idx];
+    img.alt = `${item.name} — photo ${idx + 1} of ${total}`;
+  }
+  if (counter) counter.textContent = `${idx + 1}/${total}`;
+  dots.forEach((dot, i) => {
+    if (i === idx) dot.setAttribute("aria-current", "true");
+    else dot.removeAttribute("aria-current");
+  });
+}
+
+function wireMenuCarousels() {
+  pageContent.querySelectorAll(".menu-carousel").forEach((carousel) => {
+    const track = carousel.querySelector(".menu-carousel-track");
+    const statusEl = carousel.querySelector(".menu-carousel-status");
+    const prevBtn = carousel.querySelector('[data-action="menu-carousel-prev"]');
+    const nextBtn = carousel.querySelector('[data-action="menu-carousel-next"]');
+    if (!track) return;
+
+    let lastSettledIndex = 0;
+    let scrollDebounce = null;
+    const slides = () => [...track.querySelectorAll(".menu-card")];
+
+    const getNearestSlideIndex = () => {
+      const list = slides();
+      if (!list.length) return 0;
+      const trackRect = track.getBoundingClientRect();
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      list.forEach((slide, idx) => {
+        const dist = Math.abs(slide.getBoundingClientRect().left - trackRect.left);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = idx;
+        }
+      });
+      return bestIdx;
+    };
+
+    const syncButtonsAndStatus = (announce) => {
+      const list = slides();
+      const idx = getNearestSlideIndex();
+      if (prevBtn && nextBtn) {
+        const atStart = track.scrollLeft <= 2;
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+        const prevWasFocused = document.activeElement === prevBtn;
+        const nextWasFocused = document.activeElement === nextBtn;
+        prevBtn.disabled = atStart;
+        nextBtn.disabled = atEnd;
+        if (atStart && prevWasFocused && !nextBtn.disabled) nextBtn.focus();
+        if (atEnd && nextWasFocused && !prevBtn.disabled) prevBtn.focus();
+      }
+      if (announce && statusEl && idx !== lastSettledIndex && list.length > 0) {
+        statusEl.textContent = `Showing dish ${idx + 1} of ${list.length}`;
+      }
+      lastSettledIndex = idx;
+    };
+
+    const scrollStep = (direction) => {
+      const list = slides();
+      if (!list.length) return;
+      const cardWidth = list[0].getBoundingClientRect().width + 14;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      track.scrollBy({
+        left: direction * Math.max(cardWidth, track.clientWidth * 0.72),
+        behavior: reduced ? "auto" : "smooth"
+      });
+    };
+
+    if (prevBtn) prevBtn.addEventListener("click", () => scrollStep(-1));
+    if (nextBtn) nextBtn.addEventListener("click", () => scrollStep(1));
+
+    if ("onscrollend" in window) {
+      track.addEventListener("scrollend", () => syncButtonsAndStatus(true));
+    } else {
+      track.addEventListener("scroll", () => {
+        clearTimeout(scrollDebounce);
+        scrollDebounce = setTimeout(() => syncButtonsAndStatus(true), 120);
+      }, { passive: true });
+    }
+
+    syncButtonsAndStatus(false);
+  });
+
+  // Touch swipe on individual card photo stages
+  pageContent.querySelectorAll(".menu-card-media").forEach((stage) => {
+    const id = stage.dataset.menuId;
+    stage.addEventListener("touchstart", (event) => {
+      if (event.touches && event.touches.length === 1) {
+        menuSwipeStartX.set(id, event.touches[0].clientX);
+      }
+    }, { passive: true });
+    stage.addEventListener("touchend", (event) => {
+      const startX = menuSwipeStartX.get(id);
+      if (startX === undefined || !event.changedTouches) return;
+      const diff = event.changedTouches[0].clientX - startX;
+      menuSwipeStartX.delete(id);
+      if (Math.abs(diff) > 35) {
+        const current = menuCardPhotoIndex.get(id) || 0;
+        updateMenuCardPhoto(id, current + (diff < 0 ? 1 : -1));
+      }
+    }, { passive: true });
+  });
+}
+
 function renderMenu() {
   const categories = [...new Set(data.menu.map((item) => item.category))];
-  const cards = data.menu.map((item) => `<article class="menu-card">
-    <div class="menu-card-top"><span class="menu-emoji">${escapeHtml(item.emoji)}</span><div class="menu-actions"><button class="icon-button" title="Edit ${escapeHtml(item.name)}" aria-label="Edit ${escapeHtml(item.name)}" data-action="edit-menu" data-id="${escapeHtml(item.id)}">✎</button><button class="icon-button" title="Remove ${escapeHtml(item.name)}" aria-label="Remove ${escapeHtml(item.name)}" data-action="delete-menu" data-id="${escapeHtml(item.id)}">×</button></div></div>
-    <h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description || "Freshly prepared")}</p><p class="menu-cost">${hasCost(item.costPerServing) ? `Cost ${money(item.costPerServing)} · Profit ${money(Number(item.price) - Number(item.costPerServing))} / serving` : "Cost not set · profit unavailable"}</p>
-    <div class="menu-card-bottom"><span class="menu-price">${money(item.price)}</span><span class="category-tag">${escapeHtml(item.category)}</span></div>
-  </article>`).join("");
+  let globalCardIndex = 0;
+
+  const sections = categories.map((category) => {
+    const items = data.menu.filter((item) => item.category === category);
+    const cards = items.map((item, idxInCategory) => {
+      const images = getMenuItemImages(item);
+      const activeIdx = menuCardPhotoIndex.get(item.id) || 0;
+      const fallback = menuFallbackPhoto(item.name, activeIdx);
+      const isPriority = globalCardIndex < 2;
+      globalCardIndex += 1;
+
+      const imgAttrs = isPriority
+        ? 'fetchpriority="high"'
+        : 'loading="lazy"';
+
+      const dotsHtml = images.map((_, dotIdx) =>
+        `<button class="menu-dot" type="button" data-action="menu-dot-img" data-id="${escapeHtml(item.id)}" data-index="${dotIdx}" ${dotIdx === activeIdx ? 'aria-current="true"' : ""} aria-label="View photo ${dotIdx + 1} of ${escapeHtml(item.name)}"></button>`
+      ).join("");
+
+      return `<article class="menu-card" role="group" aria-roledescription="slide" aria-label="${idxInCategory + 1} of ${items.length}: ${escapeHtml(item.name)}" data-menu-id="${escapeHtml(item.id)}">
+        <div class="menu-card-media" data-menu-id="${escapeHtml(item.id)}">
+          <img class="menu-card-img" src="${escapeHtml(images[activeIdx])}" alt="${escapeHtml(item.name)} — photo ${activeIdx + 1} of ${images.length}" ${imgAttrs} onerror="this.onerror=null;this.src='${escapeHtml(fallback)}';">
+          <span class="menu-emoji-badge" aria-hidden="true">${escapeHtml(item.emoji)}</span>
+          <span class="menu-photo-counter">${activeIdx + 1}/${images.length}</span>
+          <button class="menu-slide-arrow prev" type="button" data-action="menu-slide-img" data-id="${escapeHtml(item.id)}" data-delta="-1" aria-label="Previous photo of ${escapeHtml(item.name)}">‹</button>
+          <button class="menu-slide-arrow next" type="button" data-action="menu-slide-img" data-id="${escapeHtml(item.id)}" data-delta="1" aria-label="Next photo of ${escapeHtml(item.name)}">›</button>
+          <div class="menu-photo-dots">${dotsHtml}</div>
+        </div>
+        <div class="menu-card-body">
+          <div class="menu-card-top"><h3>${escapeHtml(item.name)}</h3><div class="menu-actions"><button class="icon-button" title="Edit ${escapeHtml(item.name)}" aria-label="Edit ${escapeHtml(item.name)}" data-action="edit-menu" data-id="${escapeHtml(item.id)}">✎</button><button class="icon-button" title="Remove ${escapeHtml(item.name)}" aria-label="Remove ${escapeHtml(item.name)}" data-action="delete-menu" data-id="${escapeHtml(item.id)}">×</button></div></div>
+          <p>${escapeHtml(item.description || "Freshly prepared")}</p>
+          <p class="menu-cost">${hasCost(item.costPerServing) ? `Cost ${money(item.costPerServing)} · Profit ${money(Number(item.price) - Number(item.costPerServing))} / serving` : "Cost not set · profit unavailable"}</p>
+          <div class="menu-card-bottom"><span class="menu-price">${money(item.price)}</span><span class="category-tag">${escapeHtml(item.category)}</span></div>
+        </div>
+      </article>`;
+    }).join("");
+
+    return `<section class="menu-carousel" aria-roledescription="carousel" aria-label="${escapeHtml(category)} menu dishes">
+      <div class="menu-carousel-head">
+        <div>
+          <h2>${escapeHtml(category)}</h2>
+          <span>${items.length} dish${items.length === 1 ? "" : "es"} · Slide photos or scroll across</span>
+        </div>
+        <div class="menu-carousel-controls">
+          <button class="menu-scroll-btn" type="button" data-action="menu-carousel-prev" aria-label="Previous ${escapeHtml(category)} dishes">‹</button>
+          <button class="menu-scroll-btn" type="button" data-action="menu-carousel-next" aria-label="Next ${escapeHtml(category)} dishes">›</button>
+        </div>
+      </div>
+      <div class="menu-carousel-track" tabindex="0" role="group" aria-label="${escapeHtml(category)} dishes">${cards}</div>
+      <p class="sr-only menu-carousel-status" role="status" aria-live="polite"></p>
+    </section>`;
+  }).join("");
+
   return `${heading("Menu", "Manage the dishes and drinks available at your canteen.", `<button class="button" data-action="new-menu-item">＋ Add item</button>`)}
-    ${categories.length ? `<div class="menu-grid">${cards}</div>` : emptyState("🍽️", "Your menu is empty", "Add an item to start building your menu.")}`;
+    ${categories.length ? `<div class="menu-sections">${sections}</div>` : emptyState("🍽️", "Your menu is empty", "Add an item to start building your menu.")}`;
 }
 
 function renderInventory() {
@@ -585,6 +902,9 @@ function renderPage() {
     renderOrdersTable();
     document.querySelector("#order-search").addEventListener("input", renderOrdersTable);
     document.querySelector("#order-status").addEventListener("change", renderOrdersTable);
+  }
+  if (activePage === "menu") {
+    wireMenuCarousels();
   }
 }
 
@@ -819,6 +1139,15 @@ document.addEventListener("click", (event) => {
   }
   if (action === "new-menu-item") newMenuItemModal();
   if (action === "edit-menu") editMenuItemModal(id);
+  if (action === "menu-slide-img") {
+    const delta = Number(actionButton.dataset.delta || 1);
+    const current = menuCardPhotoIndex.get(id) || 0;
+    updateMenuCardPhoto(id, current + delta);
+  }
+  if (action === "menu-dot-img") {
+    const index = Number(actionButton.dataset.index || 0);
+    updateMenuCardPhoto(id, index);
+  }
   if (action === "new-inventory-item") newInventoryModal();
   if (action === "close-modal") closeModal();
   if (action === "restock") restockModal(id);
