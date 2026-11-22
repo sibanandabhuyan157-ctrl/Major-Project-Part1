@@ -1,949 +1,206 @@
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.URLDecoder;
+import com.sun.net.httpserver.*;
+import java.io.*;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.nio.file.*;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-/**
- * UserWebServer — Java HTTP Server for the Royal's Canteen Student Ordering Portal (User Web).
- * Shares the exact same data files inside ../Major Project Part 1/ so orders placed here
- * appear instantly in the Admin Dashboard & Notifications page, and status updates
- * (Ready -> Completed -> "The delivery coming near to the user") sync back to the bell icon.
- */
 public class UserWebServer {
-    private static final int DEFAULT_PORT = 8082;
-    private static final int MAX_BODY_BYTES = 2 * 1024 * 1024;
+    private static final int MAX = 2 * 1024 * 1024;
     private static final Object LOCK = new Object();
-
-    private static Path userWebDir;
-    private static Path adminDir;
-    private static Path dataFile;
-    private static Path notifStoreFile;
+    private static Path userDir, adminDir, dataFile, storeFile;
 
     public static void main(String[] args) throws IOException {
-        int port = DEFAULT_PORT;
-        if (args.length > 0) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException ignored) {
-                port = DEFAULT_PORT;
-            }
-        }
-
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8082;
         Path cwd = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
-        if (Files.isRegularFile(cwd.resolve("index1.html"))) {
-            userWebDir = cwd;
-            adminDir = cwd.getParent().resolve("Major Project Part 1").normalize();
-        } else if (Files.isDirectory(cwd.resolve("User Web"))) {
-            userWebDir = cwd.resolve("User Web").normalize();
-            adminDir = cwd.resolve("Major Project Part 1").normalize();
-        } else {
-            userWebDir = cwd;
-            adminDir = cwd.getParent().resolve("Major Project Part 1").normalize();
-        }
-
+        userDir = Files.isRegularFile(cwd.resolve("index1.html")) ? cwd : cwd.resolve("User Web").normalize();
+        adminDir = Files.isRegularFile(userDir.getParent().resolve("index.html")) ? userDir.getParent() : userDir.getParent().resolve("Major Project Part 1").normalize();
         dataFile = adminDir.resolve("canteen-data.json");
-        notifStoreFile = adminDir.resolve("database").resolve("notifications-store.json");
-        ensureNotifStoreInitialized();
-
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
-        server.createContext("/api/", UserWebServer::handleApi);
-        server.createContext("/", UserWebServer::serveStaticFile);
-        server.start();
-
-        System.out.println("Royal's Canteen Student Portal (User Web) Java Server is running:");
-        System.out.println("  Student Portal    : http://127.0.0.1:" + port + "/index1.html");
-        System.out.println("  Connected Admin   : http://127.0.0.1:" + port + "/admin/index.html");
-        System.out.println("  Admin Alerts Page : http://127.0.0.1:" + port + "/admin/notifications.html");
-        System.out.println("  Shared Data File  : " + dataFile);
-        System.out.println("  Notifications DB  : " + notifStoreFile);
+        storeFile = adminDir.resolve("database").resolve("notifications-store.json");
+        initStore();
+        HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
+        s.createContext("/api/", UserWebServer::api);
+        s.createContext("/", UserWebServer::serve);
+        s.start();
+        System.out.println("User Web running: http://127.0.0.1:" + port + "/index1.html  |  Admin: http://127.0.0.1:" + port + "/admin/");
     }
 
-    private static void addCorsHeaders(HttpExchange exchange) {
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-    }
-
-    private static void handleApi(HttpExchange exchange) throws IOException {
-        addCorsHeaders(exchange);
-        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-            exchange.sendResponseHeaders(204, -1);
-            exchange.close();
-            return;
-        }
-
-        String path = exchange.getRequestURI().getPath();
-        String method = exchange.getRequestMethod();
-
+    @SuppressWarnings("unchecked")
+    private static void api(HttpExchange ex) throws IOException {
+        Headers h = ex.getResponseHeaders();
+        h.set("Access-Control-Allow-Origin", "*"); h.set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS"); h.set("Access-Control-Allow-Headers", "Content-Type");
+        if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) { ex.sendResponseHeaders(204, -1); ex.close(); return; }
+        String p = ex.getRequestURI().getPath(), m = ex.getRequestMethod();
         try {
-            if ("/api/notifications".equals(path) && "GET".equals(method)) {
-                handleGetNotifications(exchange);
-                return;
-            }
-            if ("/api/orders/user".equals(path) && "POST".equals(method)) {
-                handleCreateUserOrder(exchange);
-                return;
-            }
-            if ("/api/orders/status".equals(path) && ("POST".equals(method) || "PUT".equals(method))) {
-                handleUpdateOrderStatus(exchange);
-                return;
-            }
-            if ("/api/notifications/read".equals(path) && "POST".equals(method)) {
-                handleMarkNotificationsRead(exchange);
-                return;
-            }
-            if ("/api/students/register".equals(path) && "POST".equals(method)) {
-                handleStudentRegister(exchange);
-                return;
-            }
-            if ("/api/students/login".equals(path) && "POST".equals(method)) {
-                handleStudentLogin(exchange);
-                return;
-            }
-            if ("/api/data".equals(path) && "GET".equals(method)) {
+            if ("/api/data".equals(p) && "GET".equals(m)) synchronized (LOCK) { if (!Files.exists(dataFile)) json(ex, 404, mp("error", "No saved data")); else send(ex, 200, "application/json; charset=utf-8", Files.readAllBytes(dataFile)); return; }
+            if ("/api/notifications".equals(p) && "GET".equals(m)) {
+                String stu = qparam(ex.getRequestURI().getRawQuery(), "student");
                 synchronized (LOCK) {
-                    if (!Files.exists(dataFile)) {
-                        sendJson(exchange, 404, mapOf("error", "No saved data"));
-                        return;
+                    Map<String, Object> st = readStore(), cd = readData();
+                    List<Object> un = ls(st.get("userNotifications")), ords = ls(cd.get("orders"));
+                    if (!stu.isEmpty()) {
+                        un = filter(un, n -> stu.equalsIgnoreCase(s(n.get("studentName"))));
+                        ords = filter(ords, o -> stu.equalsIgnoreCase(s(o.get("studentAccountName")).isEmpty() ? s(o.get("customer")) : s(o.get("studentAccountName"))));
                     }
-                    send(exchange, 200, "application/json; charset=utf-8", Files.readAllBytes(dataFile));
-                    return;
+                    json(ex, 200, mp("adminNotifications", ls(st.get("adminNotifications")), "userNotifications", un, "orders", ords)); return;
                 }
             }
-            sendJson(exchange, 404, mapOf("error", "Not found"));
-        } catch (IllegalArgumentException error) {
-            sendJson(exchange, 400, mapOf("error", error.getMessage()));
-        } catch (Exception error) {
-            error.printStackTrace();
-            sendJson(exchange, 500, mapOf("error", "Server error: " + error.getMessage()));
-        }
+            if ("/api/orders/user".equals(p) && "POST".equals(m)) {
+                Map<String, Object> b = reqObj(ex), st = mpOf(b.get("student")); List<Object> its = ls(b.get("items"));
+                String oid = s(b.get("orderId")).trim(); if (oid.isEmpty() || its.isEmpty()) { json(ex, 400, mp("error", "Invalid order")); return; }
+                String sn = nonEmpty(s(b.get("studentAccountName")), s(st.get("name")), "Campus Student"), cn = nonEmpty(s(st.get("name")), sn, sn);
+                String hst = nonEmpty(s(st.get("hostel")), "Boys Hostel", "Boys Hostel"), rm = s(st.get("roomNo")).trim();
+                String addr = nonEmpty(s(st.get("fullAddress")), hst + ", Room No. " + rm + ", College Campus", "");
+                String pm = nonEmpty(s(b.get("paymentMethod")), "UPI", "UPI"), ps = nonEmpty(s(b.get("paymentStatus")), "UPI".equalsIgnoreCase(pm) ? "Paid via UPI" : "Cash on Delivery", "");
+                double tot = num(b.get("total"), 0); int est = (int) Math.round(num(b.get("estimatedMinutes"), 6));
+                String now = Instant.now().toString(), tm = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH));
+                synchronized (LOCK) {
+                    Map<String, Object> cd = readData(); Map<String, Double> costs = new HashMap<>();
+                    for (Object x : ls(cd.get("menu"))) { Map<String, Object> mi = mpOf(x); if (mi.get("costPerServing") instanceof Number) costs.put(s(mi.get("name")).toLowerCase(Locale.ROOT), ((Number) mi.get("costPerServing")).doubleValue()); }
+                    List<Object> aits = new ArrayList<>();
+                    for (Object x : its) { Map<String, Object> i = mpOf(x); double pr = num(i.get("price"), num(i.get("unitPrice"), 0)); aits.add(mp("name", s(i.get("name")), "qty", Math.max(1, (int) Math.round(num(i.get("qty"), 1))), "unitPrice", pr, "unitCost", costs.getOrDefault(s(i.get("name")).toLowerCase(Locale.ROOT), Math.round(pr * 45.0) / 100.0))); }
+                    Map<String, Object> ord = mp("id", oid, "customer", cn, "studentAccountName", sn, "items", aits, "total", tot, "status", "Preparing", "time", tm, "payment", "UPI".equalsIgnoreCase(pm) ? "UPI" : "Cash", "paymentMethod", pm, "paymentStatus", ps, "day", LocalDate.now().toString(), "source", "user-web", "student", mp("name", cn, "regNo", s(st.get("regNo")), "hostel", hst, "roomNo", rm, "phone", s(st.get("phone")), "fullAddress", addr), "estimatedMinutes", est, "dateTime", nonEmpty(s(b.get("dateTime")), tm, tm), "receipt", b);
+                    List<Object> ords = new ArrayList<>(ls(cd.get("orders"))); ords.removeIf(o -> oid.equals(s(mpOf(o).get("id")))); ords.add(0, ord); cd.put("orders", ords); writeJson(dataFile, cd);
+                    Map<String, Object> ns = readStore();
+                    Map<String, Object> an = mp("id", "an-" + oid + "-" + uid(), "orderId", oid, "customerName", cn, "regNo", s(st.get("regNo")), "hostel", hst, "roomNo", rm, "phone", s(st.get("phone")), "fullAddress", addr, "items", its, "total", tot, "paymentMethod", pm, "paymentStatus", ps, "estimatedMinutes", est, "status", "Preparing", "isRead", false, "receipt", b, "createdAt", now, "updatedAt", now);
+                    Map<String, Object> un = mp("id", "un-" + oid + "-" + uid(), "orderId", oid, "studentName", sn, "status", "Preparing", "title", "Order Receipt Received", "message", "Order #" + oid + " receipt sent to Royal's Canteen kitchen. Preparing your order!", "isRead", false, "createdAt", now);
+                    prepend(ns, "adminNotifications", an); prepend(ns, "userNotifications", un); writeJson(storeFile, ns);
+                    json(ex, 201, mp("ok", true, "order", ord, "adminNotification", an, "userNotification", un)); return;
+                }
+            }
+            if ("/api/orders/status".equals(p) && ("POST".equals(m) || "PUT".equals(m))) {
+                Map<String, Object> b = reqObj(ex); String oid = s(b.get("orderId")).trim(), st = s(b.get("status")).trim();
+                if (oid.isEmpty() || !List.of("Preparing", "Ready", "Completed", "Cancelled").contains(st)) { json(ex, 400, mp("error", "Invalid status")); return; }
+                String now = Instant.now().toString();
+                synchronized (LOCK) {
+                    Map<String, Object> cd = readData(), ns = readStore(); String sn = "", addr = "your hostel room";
+                    for (Object x : ls(cd.get("orders"))) { Map<String, Object> o = mpOf(x); if (oid.equals(s(o.get("id")))) { o.put("status", st); sn = nonEmpty(s(o.get("studentAccountName")), s(o.get("customer")), ""); addr = nonEmpty(s(mpOf(o.get("student")).get("fullAddress")), addr, addr); } }
+                    writeJson(dataFile, cd);
+                    for (Object x : ls(ns.get("adminNotifications"))) { Map<String, Object> n = mpOf(x); if (oid.equals(s(n.get("orderId")))) { n.put("status", st); n.put("isRead", true); n.put("updatedAt", now); if (sn.isEmpty()) sn = nonEmpty(s(mpOf(n.get("receipt")).get("studentAccountName")), s(n.get("customerName")), ""); addr = nonEmpty(s(n.get("fullAddress")), addr, addr); } }
+                    Map<String, Object> un = null;
+                    if (!sn.isEmpty() && !"Preparing".equals(st)) {
+                        String t = "Ready".equals(st) ? "Order Ready!" : "Completed".equals(st) ? "The delivery coming near to the user" : "Order Cancelled";
+                        String msg = "Ready".equals(st) ? "Order #" + oid + " is Ready at Royal's Canteen kitchen and being packed for " + addr + "." : "Completed".equals(st) ? "The delivery coming near to the user! Order #" + oid + " is completed and arriving near " + addr + "." : "Order #" + oid + " was cancelled by Royal's Canteen.";
+                        un = mp("id", "un-" + oid + "-" + st.toLowerCase(Locale.ROOT) + "-" + uid(), "orderId", oid, "studentName", sn, "status", st, "title", t, "message", msg, "isRead", false, "createdAt", now);
+                        prepend(ns, "userNotifications", un);
+                    }
+                    writeJson(storeFile, ns); json(ex, 200, mp("ok", true, "orderId", oid, "status", st, "userNotification", un)); return;
+                }
+            }
+            if ("/api/notifications/read".equals(p) && "POST".equals(m)) {
+                Map<String, Object> b = reqObj(ex); String tgt = nonEmpty(s(b.get("target")), "user", "user"), id = s(b.get("id")).trim(), sn = s(b.get("studentName")).trim();
+                synchronized (LOCK) {
+                    Map<String, Object> ns = readStore();
+                    for (Object x : ls(ns.get("admin".equals(tgt) ? "adminNotifications" : "userNotifications"))) {
+                        Map<String, Object> n = mpOf(x);
+                        if ((!id.isEmpty() && id.equals(s(n.get("id")))) || (id.isEmpty() && (!"user".equals(tgt) || sn.isEmpty() || sn.equalsIgnoreCase(s(n.get("studentName")))))) n.put("isRead", true);
+                    }
+                    writeJson(storeFile, ns);
+                }
+                json(ex, 200, mp("ok", true)); return;
+            }
+            if ("/api/students/register".equals(p) && "POST".equals(m)) {
+                Map<String, Object> b = reqObj(ex); String n = s(b.get("name")).trim(), e = s(b.get("email")).trim().toLowerCase(Locale.ROOT), pw = s(b.get("password"));
+                if (n.isEmpty() || e.isEmpty() || pw.length() < 4) { json(ex, 400, mp("error", "Invalid fields")); return; }
+                synchronized (LOCK) {
+                    Map<String, Object> ns = readStore(); List<Object> sts = new ArrayList<>(ls(ns.get("students")));
+                    for (Object x : sts) { Map<String, Object> u = mpOf(x); if (n.equalsIgnoreCase(s(u.get("name"))) || e.equalsIgnoreCase(s(u.get("email")))) { json(ex, 409, mp("error", "Already registered")); return; } }
+                    Map<String, Object> rec = mp("id", "stu-" + uid(), "name", n, "email", e, "password", pw, "createdAt", Instant.now().toString());
+                    sts.add(rec); ns.put("students", sts); writeJson(storeFile, ns);
+                    json(ex, 201, mp("ok", true, "student", mp("id", rec.get("id"), "name", n, "email", e, "createdAt", rec.get("createdAt")))); return;
+                }
+            }
+            if ("/api/students/login".equals(p) && "POST".equals(m)) {
+                Map<String, Object> b = reqObj(ex); String n = s(b.get("name")).trim(), pw = s(b.get("password"));
+                synchronized (LOCK) {
+                    for (Object x : ls(readStore().get("students"))) { Map<String, Object> u = mpOf(x); if (n.equalsIgnoreCase(s(u.get("name"))) && pw.equals(s(u.get("password")))) { json(ex, 200, mp("ok", true, "student", mp("id", u.get("id"), "name", u.get("name"), "email", u.get("email"), "createdAt", u.get("createdAt")))); return; } }
+                }
+                json(ex, 401, mp("error", "Invalid credentials")); return;
+            }
+            json(ex, 404, mp("error", "Not found"));
+        } catch (IllegalArgumentException e) { json(ex, 400, mp("error", e.getMessage())); }
+        catch (Exception e) { json(ex, 500, mp("error", e.getMessage())); }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void handleGetNotifications(HttpExchange exchange) throws IOException {
-        Map<String, String> query = parseQuery(exchange.getRequestURI().getRawQuery());
-        String studentFilter = query.getOrDefault("student", "").trim();
+    private static void serve(HttpExchange ex) throws IOException {
+        if (!"GET".equals(ex.getRequestMethod())) { ex.getResponseHeaders().set("Allow", "GET"); send(ex, 405, "text/plain", "Method not allowed".getBytes()); return; }
+        String p = ex.getRequestURI().getPath();
+        Map<String, Path> routes = Map.of(
+            "/", userDir.resolve("index1.html"), "/index.html", userDir.resolve("index1.html"), "/index1.html", userDir.resolve("index1.html"),
+            "/styles.css", userDir.resolve("styles.css"), "/user-app.js", userDir.resolve("user-app.js"),
+            "/admin", adminDir.resolve("index.html"), "/admin/", adminDir.resolve("index.html"), "/admin/index.html", adminDir.resolve("index.html"),
+            "/admin/notifications.html", adminDir.resolve("notifications.html"), "/admin/notifications.js", adminDir.resolve("notifications.js")
+        );
+        Path f = routes.get(p);
+        if (f == null && "/admin/app.js".equals(p)) f = adminDir.resolve("app.js");
+        if (f == null && "/admin/styles.css".equals(p)) f = adminDir.resolve("styles.css");
+        if (f == null || !Files.isRegularFile(f)) { send(ex, 404, "text/plain", "Not found".getBytes()); return; }
+        String fn = f.getFileName().toString(), ct = fn.endsWith(".css") ? "text/css" : fn.endsWith(".js") ? "text/javascript" : "text/html";
+        send(ex, 200, ct + "; charset=utf-8", Files.readAllBytes(f));
+    }
 
+    private static void initStore() throws IOException {
         synchronized (LOCK) {
-            Map<String, Object> store = readNotifStoreLocked();
-            Map<String, Object> canteenData = readCanteenDataLocked();
-
-            List<Object> adminNotifications = asList(store.get("adminNotifications"));
-            List<Object> allUserNotifications = asList(store.get("userNotifications"));
-            List<Object> allOrders = asList(canteenData.get("orders"));
-
-            List<Object> filteredUserNotifs = new ArrayList<>();
-            List<Object> filteredOrders = new ArrayList<>();
-
-            if (!studentFilter.isEmpty()) {
-                for (Object obj : allUserNotifications) {
-                    if (obj instanceof Map) {
-                        Map<String, Object> n = (Map<String, Object>) obj;
-                        if (studentFilter.equalsIgnoreCase(str(n.get("studentName")))) {
-                            filteredUserNotifs.add(n);
-                        }
-                    }
-                }
-                for (Object obj : allOrders) {
-                    if (obj instanceof Map) {
-                        Map<String, Object> o = (Map<String, Object>) obj;
-                        String acc = str(o.get("studentAccountName"));
-                        if (acc.isEmpty()) acc = str(o.get("customer"));
-                        if (studentFilter.equalsIgnoreCase(acc)) {
-                            filteredOrders.add(o);
-                        }
-                    }
-                }
-            } else {
-                filteredUserNotifs = allUserNotifications;
-                filteredOrders = allOrders;
-            }
-
-            Map<String, Object> res = new LinkedHashMap<>();
-            res.put("adminNotifications", adminNotifications);
-            res.put("userNotifications", filteredUserNotifs);
-            res.put("orders", filteredOrders);
-            sendJson(exchange, 200, res);
+            Files.createDirectories(storeFile.getParent());
+            if (!Files.exists(storeFile)) writeJson(storeFile, mp("adminNotifications", new ArrayList<>(), "userNotifications", new ArrayList<>(), "students", List.of(mp("id", "stu-demo", "name", "Demo Student", "email", "demo@campus.edu", "password", "password123", "createdAt", Instant.now().toString()))));
         }
     }
+    private static Map<String, Object> readData() throws IOException { return Files.exists(dataFile) ? mpOf(Json.parse(Files.readString(dataFile))) : mp("menu", new ArrayList<>(), "orders", new ArrayList<>(), "inventory", new ArrayList<>(), "purchases", new ArrayList<>()); }
+    private static Map<String, Object> readStore() throws IOException { initStore(); return mpOf(Json.parse(Files.readString(storeFile))); }
+    private static void writeJson(Path f, Object v) throws IOException { Files.createDirectories(f.getParent()); Path t = f.resolveSibling(f.getFileName() + "." + uid() + ".tmp"); Files.writeString(t, Json.dump(v)); try { Files.move(t, f, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE); } catch (AtomicMoveNotSupportedException e) { Files.move(t, f, StandardCopyOption.REPLACE_EXISTING); } }
+    private static Map<String, Object> reqObj(HttpExchange ex) throws IOException { byte[] b = ex.getRequestBody().readNBytes(MAX + 1); if (b.length > MAX) throw new IllegalArgumentException("Too large"); return mpOf(Json.parse(new String(b, StandardCharsets.UTF_8))); }
+    private static void prepend(Map<String, Object> m, String k, Object v) { List<Object> l = new ArrayList<>(ls(m.get(k))); l.add(0, v); m.put(k, l); }
+    private static List<Object> filter(List<Object> l, java.util.function.Predicate<Map<String, Object>> fn) { List<Object> r = new ArrayList<>(); for (Object x : l) if (fn.test(mpOf(x))) r.add(x); return r; }
+    private static String qparam(String q, String k) { if (q == null) return ""; for (String p : q.split("&")) { int i = p.indexOf('='); if (i > 0 && k.equals(URLDecoder.decode(p.substring(0, i), StandardCharsets.UTF_8))) return URLDecoder.decode(p.substring(i + 1), StandardCharsets.UTF_8).trim(); } return ""; }
+    private static String uid() { return UUID.randomUUID().toString().substring(0, 6); }
+    private static String s(Object o) { return o == null ? "" : String.valueOf(o); }
+    private static String nonEmpty(String a, String b, String c) { return !a.isBlank() ? a.trim() : !b.isBlank() ? b.trim() : c; }
+    private static double num(Object o, double fb) { if (o instanceof Number) return ((Number) o).doubleValue(); try { return Double.parseDouble(s(o)); } catch (Exception e) { return fb; } }
+    @SuppressWarnings("unchecked") private static List<Object> ls(Object o) { return o instanceof List ? (List<Object>) o : new ArrayList<>(); }
+    @SuppressWarnings("unchecked") private static Map<String, Object> mpOf(Object o) { return o instanceof Map ? (Map<String, Object>) o : new LinkedHashMap<>(); }
+    private static Map<String, Object> mp(Object... kv) { Map<String, Object> m = new LinkedHashMap<>(); for (int i = 0; i + 1 < kv.length; i += 2) m.put(String.valueOf(kv[i]), kv[i + 1]); return m; }
+    private static void json(HttpExchange ex, int c, Object b) throws IOException { send(ex, c, "application/json; charset=utf-8", Json.dump(b).getBytes(StandardCharsets.UTF_8)); }
+    private static void send(HttpExchange ex, int c, String ct, byte[] b) throws IOException { ex.getResponseHeaders().set("Content-Type", ct); ex.sendResponseHeaders(c, b.length); try (OutputStream o = ex.getResponseBody()) { o.write(b); } }
 
-    @SuppressWarnings("unchecked")
-    private static void handleCreateUserOrder(HttpExchange exchange) throws IOException {
-        Map<String, Object> payload = readJsonObject(exchange);
-        String orderId = str(payload.get("orderId")).trim();
-        Map<String, Object> student = asMap(payload.get("student"));
-        List<Object> items = asList(payload.get("items"));
-        double total = asDouble(payload.get("total"), 0.0);
-
-        if (orderId.isEmpty() || items.isEmpty()) {
-            sendJson(exchange, 400, mapOf("error", "orderId and items are required."));
-            return;
+    static final class Json {
+        private final String t; private int i;
+        private Json(String t) { this.t = t; }
+        static Object parse(String s) { Json j = new Json(s); Object v = j.val(); j.ws(); if (j.i != j.t.length()) throw new IllegalArgumentException("Bad JSON"); return v; }
+        private Object val() {
+            ws(); if (i >= t.length()) throw new IllegalArgumentException("EOF");
+            char c = t.charAt(i);
+            if (c == '{') { i++; Map<String, Object> m = new LinkedHashMap<>(); ws(); if (eat('}')) return m; do { ws(); String k = str(); ws(); if (!eat(':')) throw new IllegalArgumentException(":"); m.put(k, val()); ws(); } while (eat(',')); if (!eat('}')) throw new IllegalArgumentException("}"); return m; }
+            if (c == '[') { i++; List<Object> l = new ArrayList<>(); ws(); if (eat(']')) return l; do { l.add(val()); ws(); } while (eat(',')); if (!eat(']')) throw new IllegalArgumentException("]"); return l; }
+            if (c == '"') return str();
+            if (t.startsWith("true", i)) { i += 4; return Boolean.TRUE; }
+            if (t.startsWith("false", i)) { i += 5; return Boolean.FALSE; }
+            if (t.startsWith("null", i)) { i += 4; return null; }
+            int st = i; if (eat('-')) {} while (i < t.length() && "0123456789.eE+-".indexOf(t.charAt(i)) >= 0) i++;
+            String n = t.substring(st, i); return n.contains(".") || n.contains("e") || n.contains("E") ? Double.parseDouble(n) : Long.parseLong(n);
         }
-
-        String studentName = str(payload.get("studentAccountName")).trim();
-        String customerName = str(student.get("name")).trim();
-        if (studentName.isEmpty()) studentName = customerName.isEmpty() ? "Campus Student" : customerName;
-        if (customerName.isEmpty()) customerName = studentName;
-
-        String regNo = str(student.get("regNo")).trim();
-        String hostel = str(student.get("hostel")).trim();
-        if (hostel.isEmpty()) hostel = "Boys Hostel";
-        String roomNo = str(student.get("roomNo")).trim();
-        String phone = str(student.get("phone")).trim();
-        String fullAddress = str(student.get("fullAddress")).trim();
-        if (fullAddress.isEmpty()) fullAddress = hostel + ", Room No. " + roomNo + ", College Campus";
-
-        String paymentMethod = str(payload.get("paymentMethod")).trim();
-        if (paymentMethod.isEmpty()) paymentMethod = "UPI";
-        String paymentStatus = str(payload.get("paymentStatus")).trim();
-        if (paymentStatus.isEmpty()) {
-            paymentStatus = "UPI".equalsIgnoreCase(paymentMethod) ? "Paid via UPI" : "Cash on Delivery";
-        }
-        int estimatedMinutes = (int) Math.round(asDouble(payload.get("estimatedMinutes"), 6));
-        String dateTime = str(payload.get("dateTime")).trim();
-        String nowIso = Instant.now().toString();
-        String timeStr = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH));
-        String dayKey = LocalDate.now().toString();
-
-        synchronized (LOCK) {
-            Map<String, Object> canteenData = readCanteenDataLocked();
-            Map<String, Double> menuCosts = new HashMap<>();
-            for (Object mObj : asList(canteenData.get("menu"))) {
-                if (mObj instanceof Map) {
-                    Map<String, Object> m = (Map<String, Object>) mObj;
-                    String mName = str(m.get("name")).toLowerCase(Locale.ROOT);
-                    if (!mName.isEmpty() && m.get("costPerServing") instanceof Number) {
-                        menuCosts.put(mName, ((Number) m.get("costPerServing")).doubleValue());
-                    }
-                }
-            }
-
-            List<Object> adminItems = new ArrayList<>();
-            for (Object iObj : items) {
-                if (iObj instanceof Map) {
-                    Map<String, Object> it = (Map<String, Object>) iObj;
-                    String name = str(it.get("name"));
-                    int qty = Math.max(1, (int) Math.round(asDouble(it.get("qty"), 1)));
-                    double unitPrice = asDouble(it.get("price"), asDouble(it.get("unitPrice"), 0));
-                    double unitCost = menuCosts.getOrDefault(name.toLowerCase(Locale.ROOT), Math.round(unitPrice * 45.0) / 100.0);
-                    Map<String, Object> line = new LinkedHashMap<>();
-                    line.put("name", name);
-                    line.put("qty", qty);
-                    line.put("unitPrice", unitPrice);
-                    line.put("unitCost", unitCost);
-                    adminItems.add(line);
-                }
-            }
-
-            Map<String, Object> studentInfo = new LinkedHashMap<>();
-            studentInfo.put("name", customerName);
-            studentInfo.put("regNo", regNo);
-            studentInfo.put("hostel", hostel);
-            studentInfo.put("roomNo", roomNo);
-            studentInfo.put("phone", phone);
-            studentInfo.put("fullAddress", fullAddress);
-
-            Map<String, Object> orderRecord = new LinkedHashMap<>();
-            orderRecord.put("id", orderId);
-            orderRecord.put("customer", customerName);
-            orderRecord.put("studentAccountName", studentName);
-            orderRecord.put("items", adminItems);
-            orderRecord.put("total", total);
-            orderRecord.put("status", "Preparing");
-            orderRecord.put("time", timeStr);
-            orderRecord.put("payment", "UPI".equalsIgnoreCase(paymentMethod) ? "UPI" : "Cash");
-            orderRecord.put("paymentMethod", paymentMethod);
-            orderRecord.put("paymentStatus", paymentStatus);
-            orderRecord.put("day", dayKey);
-            orderRecord.put("source", "user-web");
-            orderRecord.put("student", studentInfo);
-            orderRecord.put("estimatedMinutes", estimatedMinutes);
-            orderRecord.put("dateTime", dateTime.isEmpty() ? timeStr : dateTime);
-            orderRecord.put("receipt", payload);
-
-            List<Object> orders = new ArrayList<>(asList(canteenData.get("orders")));
-            orders.removeIf(o -> o instanceof Map && orderId.equals(str(((Map<String, Object>) o).get("id"))));
-            orders.add(0, orderRecord);
-            canteenData.put("orders", orders);
-            writeJsonAtomic(dataFile, canteenData);
-
-            Map<String, Object> store = readNotifStoreLocked();
-            Map<String, Object> adminNotif = new LinkedHashMap<>();
-            adminNotif.put("id", "an-" + orderId + "-" + shortId());
-            adminNotif.put("orderId", orderId);
-            adminNotif.put("customerName", customerName);
-            adminNotif.put("regNo", regNo);
-            adminNotif.put("hostel", hostel);
-            adminNotif.put("roomNo", roomNo);
-            adminNotif.put("phone", phone);
-            adminNotif.put("fullAddress", fullAddress);
-            adminNotif.put("items", items);
-            adminNotif.put("total", total);
-            adminNotif.put("paymentMethod", paymentMethod);
-            adminNotif.put("paymentStatus", paymentStatus);
-            adminNotif.put("estimatedMinutes", estimatedMinutes);
-            adminNotif.put("status", "Preparing");
-            adminNotif.put("isRead", Boolean.FALSE);
-            adminNotif.put("receipt", payload);
-            adminNotif.put("createdAt", nowIso);
-            adminNotif.put("updatedAt", nowIso);
-
-            List<Object> adminNotifications = new ArrayList<>(asList(store.get("adminNotifications")));
-            adminNotifications.add(0, adminNotif);
-            store.put("adminNotifications", adminNotifications);
-
-            Map<String, Object> userNotif = new LinkedHashMap<>();
-            userNotif.put("id", "un-" + orderId + "-" + shortId());
-            userNotif.put("orderId", orderId);
-            userNotif.put("studentName", studentName);
-            userNotif.put("status", "Preparing");
-            userNotif.put("title", "Order Receipt Received");
-            userNotif.put("message", "Order #" + orderId + " receipt sent to Royal's Canteen kitchen. Preparing your order!");
-            userNotif.put("isRead", Boolean.FALSE);
-            userNotif.put("createdAt", nowIso);
-
-            List<Object> userNotifications = new ArrayList<>(asList(store.get("userNotifications")));
-            userNotifications.add(0, userNotif);
-            store.put("userNotifications", userNotifications);
-
-            writeJsonAtomic(notifStoreFile, store);
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("ok", Boolean.TRUE);
-            response.put("order", orderRecord);
-            response.put("adminNotification", adminNotif);
-            response.put("userNotification", userNotif);
-            sendJson(exchange, 201, response);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void handleUpdateOrderStatus(HttpExchange exchange) throws IOException {
-        Map<String, Object> payload = readJsonObject(exchange);
-        String orderId = str(payload.get("orderId")).trim();
-        String status = str(payload.get("status")).trim();
-
-        if (orderId.isEmpty() || !("Preparing".equals(status) || "Ready".equals(status)
-                || "Completed".equals(status) || "Cancelled".equals(status))) {
-            sendJson(exchange, 400, mapOf("error", "Valid orderId and status are required."));
-            return;
-        }
-
-        String nowIso = Instant.now().toString();
-        synchronized (LOCK) {
-            Map<String, Object> canteenData = readCanteenDataLocked();
-            String studentName = "";
-            String fullAddress = "your hostel room";
-
-            for (Object oObj : asList(canteenData.get("orders"))) {
-                if (oObj instanceof Map) {
-                    Map<String, Object> ord = (Map<String, Object>) oObj;
-                    if (orderId.equals(str(ord.get("id")))) {
-                        ord.put("status", status);
-                        studentName = str(ord.get("studentAccountName"));
-                        if (studentName.isEmpty()) studentName = str(ord.get("customer"));
-                        Map<String, Object> st = asMap(ord.get("student"));
-                        if (!str(st.get("fullAddress")).isEmpty()) fullAddress = str(st.get("fullAddress"));
-                    }
-                }
-            }
-            writeJsonAtomic(dataFile, canteenData);
-
-            Map<String, Object> store = readNotifStoreLocked();
-            for (Object nObj : asList(store.get("adminNotifications"))) {
-                if (nObj instanceof Map) {
-                    Map<String, Object> n = (Map<String, Object>) nObj;
-                    if (orderId.equals(str(n.get("orderId")))) {
-                        n.put("status", status);
-                        n.put("isRead", Boolean.TRUE);
-                        n.put("updatedAt", nowIso);
-                        if (studentName.isEmpty()) {
-                            Map<String, Object> rec = asMap(n.get("receipt"));
-                            studentName = str(rec.get("studentAccountName"));
-                            if (studentName.isEmpty()) studentName = str(n.get("customerName"));
-                        }
-                        if (!str(n.get("fullAddress")).isEmpty()) fullAddress = str(n.get("fullAddress"));
-                    }
-                }
-            }
-
-            Map<String, Object> userNotif = null;
-            if (!studentName.isEmpty() && ("Ready".equals(status) || "Completed".equals(status) || "Cancelled".equals(status))) {
-                String title;
-                String message;
-                if ("Ready".equals(status)) {
-                    title = "Order Ready!";
-                    message = "Order #" + orderId + " is Ready at Royal's Canteen kitchen and being packed for " + fullAddress + ".";
-                } else if ("Completed".equals(status)) {
-                    title = "The delivery coming near to the user";
-                    message = "The delivery coming near to the user! Order #" + orderId + " is completed and arriving near " + fullAddress + ".";
-                } else {
-                    title = "Order Cancelled";
-                    message = "Order #" + orderId + " was cancelled by Royal's Canteen.";
-                }
-
-                userNotif = new LinkedHashMap<>();
-                userNotif.put("id", "un-" + orderId + "-" + status.toLowerCase(Locale.ROOT) + "-" + shortId());
-                userNotif.put("orderId", orderId);
-                userNotif.put("studentName", studentName);
-                userNotif.put("status", status);
-                userNotif.put("title", title);
-                userNotif.put("message", message);
-                userNotif.put("isRead", Boolean.FALSE);
-                userNotif.put("createdAt", nowIso);
-
-                List<Object> userNotifications = new ArrayList<>(asList(store.get("userNotifications")));
-                userNotifications.add(0, userNotif);
-                store.put("userNotifications", userNotifications);
-            }
-
-            writeJsonAtomic(notifStoreFile, store);
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("ok", Boolean.TRUE);
-            response.put("orderId", orderId);
-            response.put("status", status);
-            response.put("userNotification", userNotif);
-            sendJson(exchange, 200, response);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void handleMarkNotificationsRead(HttpExchange exchange) throws IOException {
-        Map<String, Object> payload = readJsonObject(exchange);
-        String target = str(payload.get("target"));
-        if (target.isEmpty()) target = "user";
-        String id = str(payload.get("id")).trim();
-        String studentName = str(payload.get("studentName")).trim();
-
-        synchronized (LOCK) {
-            Map<String, Object> store = readNotifStoreLocked();
-            String key = "admin".equals(target) ? "adminNotifications" : "userNotifications";
-            for (Object obj : asList(store.get(key))) {
-                if (obj instanceof Map) {
-                    Map<String, Object> n = (Map<String, Object>) obj;
-                    if (!id.isEmpty()) {
-                        if (id.equals(str(n.get("id")))) n.put("isRead", Boolean.TRUE);
-                    } else if ("user".equals(target) && !studentName.isEmpty()) {
-                        if (studentName.equalsIgnoreCase(str(n.get("studentName")))) n.put("isRead", Boolean.TRUE);
-                    } else {
-                        n.put("isRead", Boolean.TRUE);
-                    }
-                }
-            }
-            writeJsonAtomic(notifStoreFile, store);
-        }
-        sendJson(exchange, 200, mapOf("ok", Boolean.TRUE));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void handleStudentRegister(HttpExchange exchange) throws IOException {
-        Map<String, Object> payload = readJsonObject(exchange);
-        String name = str(payload.get("name")).trim();
-        String email = str(payload.get("email")).trim().toLowerCase(Locale.ROOT);
-        String password = str(payload.get("password"));
-
-        if (name.isEmpty() || email.isEmpty() || password.length() < 4) {
-            sendJson(exchange, 400, mapOf("error", "Name, email, and password (min 4 chars) are required."));
-            return;
-        }
-
-        synchronized (LOCK) {
-            Map<String, Object> store = readNotifStoreLocked();
-            List<Object> students = new ArrayList<>(asList(store.get("students")));
-            for (Object obj : students) {
-                if (obj instanceof Map) {
-                    Map<String, Object> st = (Map<String, Object>) obj;
-                    if (name.equalsIgnoreCase(str(st.get("name"))) || email.equalsIgnoreCase(str(st.get("email")))) {
-                        sendJson(exchange, 409, mapOf("error", "A student with this name or email is already registered."));
-                        return;
-                    }
-                }
-            }
-            Map<String, Object> record = new LinkedHashMap<>();
-            record.put("id", "stu-" + shortId());
-            record.put("name", name);
-            record.put("email", email);
-            record.put("password", password);
-            record.put("createdAt", Instant.now().toString());
-            students.add(record);
-            store.put("students", students);
-            writeJsonAtomic(notifStoreFile, store);
-
-            Map<String, Object> safeStudent = new LinkedHashMap<>();
-            safeStudent.put("id", record.get("id"));
-            safeStudent.put("name", name);
-            safeStudent.put("email", email);
-            safeStudent.put("createdAt", record.get("createdAt"));
-            sendJson(exchange, 201, mapOf("ok", Boolean.TRUE, "student", safeStudent));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void handleStudentLogin(HttpExchange exchange) throws IOException {
-        Map<String, Object> payload = readJsonObject(exchange);
-        String name = str(payload.get("name")).trim();
-        String password = str(payload.get("password"));
-
-        synchronized (LOCK) {
-            Map<String, Object> store = readNotifStoreLocked();
-            for (Object obj : asList(store.get("students"))) {
-                if (obj instanceof Map) {
-                    Map<String, Object> st = (Map<String, Object>) obj;
-                    if (name.equalsIgnoreCase(str(st.get("name"))) && password.equals(str(st.get("password")))) {
-                        Map<String, Object> safeStudent = new LinkedHashMap<>();
-                        safeStudent.put("id", st.get("id"));
-                        safeStudent.put("name", st.get("name"));
-                        safeStudent.put("email", st.get("email"));
-                        safeStudent.put("createdAt", st.get("createdAt"));
-                        sendJson(exchange, 200, mapOf("ok", Boolean.TRUE, "student", safeStudent));
-                        return;
-                    }
-                }
-            }
-        }
-        sendJson(exchange, 401, mapOf("error", "Invalid Student Name or Password."));
-    }
-
-    private static void serveStaticFile(HttpExchange exchange) throws IOException {
-        if (!"GET".equals(exchange.getRequestMethod())) {
-            exchange.getResponseHeaders().set("Allow", "GET");
-            sendText(exchange, 405, "text/plain; charset=utf-8", "Method not allowed");
-            return;
-        }
-
-        String path = exchange.getRequestURI().getPath();
-        Path file = null;
-        String contentType = "text/plain; charset=utf-8";
-
-        if ("/".equals(path) || "/index.html".equals(path) || "/index1.html".equals(path)) {
-            file = userWebDir.resolve("index1.html");
-            contentType = "text/html; charset=utf-8";
-        } else if ("/styles.css".equals(path)) {
-            file = userWebDir.resolve("styles.css");
-            contentType = "text/css; charset=utf-8";
-        } else if ("/user-app.js".equals(path)) {
-            file = userWebDir.resolve("user-app.js");
-            contentType = "text/javascript; charset=utf-8";
-        } else if ("/admin".equals(path) || "/admin/".equals(path) || "/admin/index.html".equals(path)) {
-            file = adminDir.resolve("index.html");
-            contentType = "text/html; charset=utf-8";
-        } else if ("/admin/notifications.html".equals(path)) {
-            file = adminDir.resolve("notifications.html");
-            contentType = "text/html; charset=utf-8";
-        } else if ("/admin/notifications.js".equals(path)) {
-            file = adminDir.resolve("notifications.js");
-            contentType = "text/javascript; charset=utf-8";
-        } else if ("/admin/app.js".equals(path)) {
-            file = adminDir.resolve("app.js");
-            contentType = "text/javascript; charset=utf-8";
-        } else if ("/admin/styles.css".equals(path)) {
-            file = adminDir.resolve("styles.css");
-            contentType = "text/css; charset=utf-8";
-        }
-
-        if (file == null || !Files.isRegularFile(file)) {
-            sendText(exchange, 404, "text/plain; charset=utf-8", "Not found");
-            return;
-        }
-        send(exchange, 200, contentType, Files.readAllBytes(file));
-    }
-
-    private static void ensureNotifStoreInitialized() throws IOException {
-        synchronized (LOCK) {
-            Files.createDirectories(notifStoreFile.getParent());
-            if (!Files.exists(notifStoreFile)) {
-                Map<String, Object> init = new LinkedHashMap<>();
-                init.put("adminNotifications", new ArrayList<>());
-                init.put("userNotifications", new ArrayList<>());
-                List<Object> students = new ArrayList<>();
-                Map<String, Object> demo = new LinkedHashMap<>();
-                demo.put("id", "stu-demo");
-                demo.put("name", "Demo Student");
-                demo.put("email", "demo@campus.edu");
-                demo.put("password", "password123");
-                demo.put("createdAt", Instant.now().toString());
-                students.add(demo);
-                init.put("students", students);
-                writeJsonAtomic(notifStoreFile, init);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> readCanteenDataLocked() throws IOException {
-        if (!Files.exists(dataFile)) {
-            Map<String, Object> empty = new LinkedHashMap<>();
-            empty.put("menu", new ArrayList<>());
-            empty.put("orders", new ArrayList<>());
-            empty.put("inventory", new ArrayList<>());
-            empty.put("purchases", new ArrayList<>());
-            return empty;
-        }
-        String raw = Files.readString(dataFile, StandardCharsets.UTF_8);
-        Object parsed = JsonCodec.parse(raw);
-        return parsed instanceof Map ? (Map<String, Object>) parsed : new LinkedHashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> readNotifStoreLocked() throws IOException {
-        ensureNotifStoreInitialized();
-        String raw = Files.readString(notifStoreFile, StandardCharsets.UTF_8);
-        Object parsed = JsonCodec.parse(raw);
-        Map<String, Object> store = parsed instanceof Map ? (Map<String, Object>) parsed : new LinkedHashMap<>();
-        if (!(store.get("adminNotifications") instanceof List)) store.put("adminNotifications", new ArrayList<>());
-        if (!(store.get("userNotifications") instanceof List)) store.put("userNotifications", new ArrayList<>());
-        if (!(store.get("students") instanceof List)) store.put("students", new ArrayList<>());
-        return store;
-    }
-
-    private static void writeJsonAtomic(Path target, Object value) throws IOException {
-        Files.createDirectories(target.getParent());
-        Path tmp = target.resolveSibling(target.getFileName().toString() + ".tmp");
-        Files.writeString(tmp, JsonCodec.stringify(value), StandardCharsets.UTF_8);
-        try {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException error) {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
-
-    private static String readRequestBody(HttpExchange exchange) throws IOException {
-        byte[] body = exchange.getRequestBody().readNBytes(MAX_BODY_BYTES + 1);
-        if (body.length > MAX_BODY_BYTES) {
-            throw new IllegalArgumentException("Request too large");
-        }
-        return new String(body, StandardCharsets.UTF_8).trim();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> readJsonObject(HttpExchange exchange) throws IOException {
-        String body = readRequestBody(exchange);
-        Object parsed = JsonCodec.parse(body);
-        if (!(parsed instanceof Map)) {
-            throw new IllegalArgumentException("Expected a JSON object");
-        }
-        return (Map<String, Object>) parsed;
-    }
-
-    private static Map<String, String> parseQuery(String rawQuery) {
-        if (rawQuery == null || rawQuery.isEmpty()) return Collections.emptyMap();
-        Map<String, String> params = new HashMap<>();
-        for (String pair : rawQuery.split("&")) {
-            int eq = pair.indexOf('=');
-            if (eq > 0) {
-                String k = URLDecoder.decode(pair.substring(0, eq), StandardCharsets.UTF_8);
-                String v = URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
-                params.put(k, v);
-            }
-        }
-        return params;
-    }
-
-    private static String shortId() {
-        return UUID.randomUUID().toString().substring(0, 6);
-    }
-
-    private static String str(Object obj) {
-        return obj == null ? "" : String.valueOf(obj);
-    }
-
-    private static double asDouble(Object obj, double fallback) {
-        if (obj instanceof Number) return ((Number) obj).doubleValue();
-        if (obj instanceof String) {
-            try {
-                return Double.parseDouble(((String) obj).trim());
-            } catch (NumberFormatException ignored) {
-                return fallback;
-            }
-        }
-        return fallback;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<Object> asList(Object obj) {
-        return obj instanceof List ? (List<Object>) obj : new ArrayList<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> asMap(Object obj) {
-        return obj instanceof Map ? (Map<String, Object>) obj : new LinkedHashMap<>();
-    }
-
-    private static Map<String, Object> mapOf(Object... kv) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (int i = 0; i + 1 < kv.length; i += 2) {
-            map.put(String.valueOf(kv[i]), kv[i + 1]);
-        }
-        return map;
-    }
-
-    private static void sendJson(HttpExchange exchange, int status, Object body) throws IOException {
-        sendText(exchange, status, "application/json; charset=utf-8", JsonCodec.stringify(body));
-    }
-
-    private static void sendText(HttpExchange exchange, int status, String contentType, String text)
-            throws IOException {
-        send(exchange, status, contentType, text.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static void send(HttpExchange exchange, int status, String contentType, byte[] body)
-            throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", contentType);
-        exchange.sendResponseHeaders(status, body.length);
-        try (OutputStream output = exchange.getResponseBody()) {
-            output.write(body);
-        }
-    }
-
-    static final class JsonCodec {
-        private final String src;
-        private int pos;
-
-        private JsonCodec(String src) {
-            this.src = src;
-        }
-
-        static Object parse(String json) {
-            if (json == null || json.isBlank()) {
-                throw new IllegalArgumentException("Empty JSON body");
-            }
-            JsonCodec parser = new JsonCodec(json);
-            Object val = parser.readValue();
-            parser.skipWhitespace();
-            if (parser.pos != parser.src.length()) {
-                throw new IllegalArgumentException("Unexpected trailing JSON characters");
-            }
-            return val;
-        }
-
-        private Object readValue() {
-            skipWhitespace();
-            if (pos >= src.length()) throw new IllegalArgumentException("Unexpected end of JSON");
-            char c = src.charAt(pos);
-            if (c == '{') return readObject();
-            if (c == '[') return readArray();
-            if (c == '"') return readString();
-            if (c == 't') { expect("true"); return Boolean.TRUE; }
-            if (c == 'f') { expect("false"); return Boolean.FALSE; }
-            if (c == 'n') { expect("null"); return null; }
-            if (c == '-' || (c >= '0' && c <= '9')) return readNumber();
-            throw new IllegalArgumentException("Unexpected JSON token at " + pos);
-        }
-
-        private Map<String, Object> readObject() {
-            pos++;
-            Map<String, Object> map = new LinkedHashMap<>();
-            skipWhitespace();
-            if (peek('}')) {
-                pos++;
-                return map;
-            }
-            while (true) {
-                skipWhitespace();
-                if (!peek('"')) throw new IllegalArgumentException("Expected string key at " + pos);
-                String key = readString();
-                skipWhitespace();
-                if (!peek(':')) throw new IllegalArgumentException("Expected ':' at " + pos);
-                pos++;
-                Object value = readValue();
-                map.put(key, value);
-                skipWhitespace();
-                if (peek('}')) {
-                    pos++;
-                    return map;
-                }
-                if (!peek(',')) throw new IllegalArgumentException("Expected ',' or '}' at " + pos);
-                pos++;
-            }
-        }
-
-        private List<Object> readArray() {
-            pos++;
-            List<Object> list = new ArrayList<>();
-            skipWhitespace();
-            if (peek(']')) {
-                pos++;
-                return list;
-            }
-            while (true) {
-                list.add(readValue());
-                skipWhitespace();
-                if (peek(']')) {
-                    pos++;
-                    return list;
-                }
-                if (!peek(',')) throw new IllegalArgumentException("Expected ',' or ']' at " + pos);
-                pos++;
-            }
-        }
-
-        private String readString() {
-            pos++;
-            StringBuilder sb = new StringBuilder();
-            while (pos < src.length()) {
-                char c = src.charAt(pos++);
-                if (c == '"') return sb.toString();
-                if (c == '\\') {
-                    if (pos >= src.length()) throw new IllegalArgumentException("Unterminated escape");
-                    char esc = src.charAt(pos++);
-                    switch (esc) {
-                        case '"': sb.append('"'); break;
-                        case '\\': sb.append('\\'); break;
-                        case '/': sb.append('/'); break;
-                        case 'b': sb.append('\b'); break;
-                        case 'f': sb.append('\f'); break;
-                        case 'n': sb.append('\n'); break;
-                        case 'r': sb.append('\r'); break;
-                        case 't': sb.append('\t'); break;
-                        case 'u':
-                            if (pos + 4 > src.length()) throw new IllegalArgumentException("Invalid unicode escape");
-                            String hex = src.substring(pos, pos + 4);
-                            sb.append((char) Integer.parseInt(hex, 16));
-                            pos += 4;
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Invalid escape char: " + esc);
-                    }
-                } else {
-                    sb.append(c);
-                }
+        private String str() {
+            if (!eat('"')) throw new IllegalArgumentException("\"");
+            StringBuilder b = new StringBuilder();
+            while (i < t.length()) {
+                char c = t.charAt(i++); if (c == '"') return b.toString();
+                if (c == '\\') { char e = t.charAt(i++); if (e == 'u') { b.append((char) Integer.parseInt(t.substring(i, i + 4), 16)); i += 4; } else b.append(e == 'n' ? '\n' : e == 'r' ? '\r' : e == 't' ? '\t' : e == 'b' ? '\b' : e == 'f' ? '\f' : e); } else b.append(c);
             }
             throw new IllegalArgumentException("Unterminated string");
         }
-
-        private Number readNumber() {
-            int start = pos;
-            if (peek('-')) pos++;
-            while (pos < src.length() && Character.isDigit(src.charAt(pos))) pos++;
-            boolean isFloat = false;
-            if (peek('.')) {
-                isFloat = true;
-                pos++;
-                while (pos < src.length() && Character.isDigit(src.charAt(pos))) pos++;
-            }
-            if (peek('e') || peek('E')) {
-                isFloat = true;
-                pos++;
-                if (peek('+') || peek('-')) pos++;
-                while (pos < src.length() && Character.isDigit(src.charAt(pos))) pos++;
-            }
-            String numStr = src.substring(start, pos);
-            if (isFloat) return Double.parseDouble(numStr);
-            long l = Long.parseLong(numStr);
-            if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) return (int) l;
-            return l;
-        }
-
-        private void expect(String literal) {
-            if (!src.startsWith(literal, pos)) {
-                throw new IllegalArgumentException("Expected " + literal + " at " + pos);
-            }
-            pos += literal.length();
-        }
-
-        private boolean peek(char c) {
-            return pos < src.length() && src.charAt(pos) == c;
-        }
-
-        private void skipWhitespace() {
-            while (pos < src.length()) {
-                char c = src.charAt(pos);
-                if (c == ' ' || c == '\t' || c == '\r' || c == '\n') pos++;
-                else break;
-            }
-        }
-
-        static String stringify(Object value) {
-            StringBuilder sb = new StringBuilder();
-            writeValue(sb, value);
-            return sb.toString();
-        }
-
+        private boolean eat(char c) { if (i < t.length() && t.charAt(i) == c) { i++; return true; } return false; }
+        private void ws() { while (i < t.length() && Character.isWhitespace(t.charAt(i))) i++; }
+        static String dump(Object v) { StringBuilder b = new StringBuilder(); w(b, v); return b.toString(); }
         @SuppressWarnings("unchecked")
-        private static void writeValue(StringBuilder sb, Object value) {
-            if (value == null) {
-                sb.append("null");
-            } else if (value instanceof Boolean) {
-                sb.append(((Boolean) value) ? "true" : "false");
-            } else if (value instanceof Number) {
-                double d = ((Number) value).doubleValue();
-                if (Double.isNaN(d) || Double.isInfinite(d)) {
-                    sb.append("0");
-                } else if (value instanceof Integer || value instanceof Long) {
-                    sb.append(value.toString());
-                } else if (d == Math.rint(d) && Math.abs(d) < 1e15) {
-                    sb.append((long) d);
-                } else {
-                    sb.append(value.toString());
-                }
-            } else if (value instanceof String) {
-                writeString(sb, (String) value);
-            } else if (value instanceof List) {
-                sb.append('[');
-                List<Object> list = (List<Object>) value;
-                for (int i = 0; i < list.size(); i++) {
-                    if (i > 0) sb.append(',');
-                    writeValue(sb, list.get(i));
-                }
-                sb.append(']');
-            } else if (value instanceof Map) {
-                sb.append('{');
-                Map<Object, Object> map = (Map<Object, Object>) value;
-                boolean first = true;
-                for (Map.Entry<Object, Object> entry : map.entrySet()) {
-                    if (!first) sb.append(',');
-                    first = false;
-                    writeString(sb, String.valueOf(entry.getKey()));
-                    sb.append(':');
-                    writeValue(sb, entry.getValue());
-                }
-                sb.append('}');
-            } else {
-                writeString(sb, String.valueOf(value));
-            }
-        }
-
-        private static void writeString(StringBuilder sb, String s) {
-            sb.append('"');
-            for (int i = 0; i < s.length(); i++) {
-                char c = s.charAt(i);
-                switch (c) {
-                    case '"': sb.append("\\\""); break;
-                    case '\\': sb.append("\\\\"); break;
-                    case '\b': sb.append("\\b"); break;
-                    case '\f': sb.append("\\f"); break;
-                    case '\n': sb.append("\\n"); break;
-                    case '\r': sb.append("\\r"); break;
-                    case '\t': sb.append("\\t"); break;
-                    default:
-                        if (c < 0x20) {
-                            sb.append(String.format("\\u%04x", (int) c));
-                        } else {
-                            sb.append(c);
-                        }
-                }
-            }
-            sb.append('"');
+        private static void w(StringBuilder b, Object v) {
+            if (v == null) b.append("null");
+            else if (v instanceof Boolean) b.append(v);
+            else if (v instanceof Number) { double d = ((Number) v).doubleValue(); b.append(Double.isFinite(d) ? (v instanceof Integer || v instanceof Long ? v.toString() : d == Math.rint(d) && Math.abs(d) < 1e15 ? String.valueOf((long) d) : v.toString()) : "0"); }
+            else if (v instanceof String) { b.append('"'); for (char c : ((String) v).toCharArray()) b.append(c == '"' ? "\\\"" : c == '\\' ? "\\\\" : c == '\n' ? "\\n" : c == '\r' ? "\\r" : c == '\t' ? "\\t" : c < 32 ? String.format("\\u%04x", (int) c) : String.valueOf(c)); b.append('"'); }
+            else if (v instanceof List) { b.append('['); List<Object> l = (List<Object>) v; for (int k = 0; k < l.size(); k++) { if (k > 0) b.append(','); w(b, l.get(k)); } b.append(']'); }
+            else if (v instanceof Map) { b.append('{'); boolean f = true; for (Map.Entry<Object, Object> e : ((Map<Object, Object>) v).entrySet()) { if (!f) b.append(','); f = false; w(b, String.valueOf(e.getKey())); b.append(':'); w(b, e.getValue()); } b.append('}'); }
+            else w(b, String.valueOf(v));
         }
     }
 }

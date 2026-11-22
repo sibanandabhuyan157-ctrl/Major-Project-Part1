@@ -5,1052 +5,303 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f5f6f2" />
   <title>canteenROYAL — Royal's Canteen Student Ordering</title>
-
-  <!-- Google Fonts: DM Sans & Manrope (Matching Major Project Part 1) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind CSS CDN themed to Royal's Canteen palette -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
-            display: ['Manrope', 'DM Sans', 'sans-serif'],
-          },
-          colors: {
-            royal: {
-              50: '#eaf3ec',
-              100: '#d7e8d9',
-              500: '#245c43',
-              600: '#194733',
-              700: '#123526',
-            },
-            zomato: {
-              50: '#eaf3ec',
-              100: '#d7e8d9',
-              500: '#245c43',
-              600: '#194733',
-              700: '#123526',
-            },
-          },
-          boxShadow: {
-            card: '0 8px 24px -4px rgba(34, 50, 39, 0.06)',
-            'card-hover': '0 14px 32px -6px rgba(34, 50, 39, 0.12)',
-          },
-        },
-      },
-    };
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], display: ['Manrope', 'DM Sans', 'sans-serif'] }, colors: { royal: { 50: '#eaf3ec', 100: '#d7e8d9', 500: '#245c43', 600: '#194733', 700: '#123526' }, zomato: { 50: '#eaf3ec', 100: '#d7e8d9', 500: '#245c43', 600: '#194733', 700: '#123526' } }, boxShadow: { card: '0 8px 24px -4px rgba(34,50,39,.06)', 'card-hover': '0 14px 32px -6px rgba(34,50,39,.12)' } } } };
   </script>
-
-  <!-- Shared Layout & Theme Styles matching Major Project Part 1 -->
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Conditional Popover Polyfill (loads ONLY when native Popover API is unsupported) -->
-  <script type="module">
-    if (!Object.hasOwn(HTMLElement.prototype, 'popover')) {
-      import('https://unpkg.com/@oddbird/popover-polyfill@latest/dist/popover.min.js');
-    }
-  </script>
-
-  <!-- QRCode.js CDN for dynamic scannable UPI QR code -->
+  <script type="module">if (!Object.hasOwn(HTMLElement.prototype, 'popover')) import('https://unpkg.com/@oddbird/popover-polyfill@latest/dist/popover.min.js');</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-
-  <!-- jsPDF CDN for downloadable PDF Receipt -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body class="bg-[#f5f6f2] text-[#202b25] font-sans antialiased selection:bg-[#245c43] selection:text-white overflow-x-hidden">
-
-  <!-- ==================== APP SHELL (SIDEBAR + MAIN CONTENT LIKE MAJOR PROJECT PART 1) ==================== -->
   <div class="app-shell">
-    <!-- Mobile Sidebar Backdrop -->
     <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
-
-    <!-- Fixed Left Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#top" onclick="scrollToSection('top'); return false;" aria-label="canteenROYAL home">
-        <span class="brand-mark">R<span>.</span></span>
-        <span class="brand-name">canteen<span>ROYAL</span></span>
-      </a>
-
+      <a class="brand" href="#top" onclick="scrollToSection('top'); return false;" aria-label="canteenROYAL home"><span class="brand-mark">R<span>.</span></span><span class="brand-name">canteen<span>ROYAL</span></span></a>
       <div class="workspace-label">STUDENT PORTAL</div>
       <nav class="navigation" aria-label="Main navigation">
-        <button type="button" class="nav-link active" data-section="top" onclick="scrollToSection('top')">
-          <span class="nav-icon">◫</span>Explore
-        </button>
-        <button type="button" class="nav-link" data-section="fullMenuSection" onclick="scrollToSection('fullMenuSection')">
-          <span class="nav-icon">▦</span>All Dishes
-        </button>
-        <button type="button" class="nav-link" onclick="handleOpenBasket()">
-          <span class="nav-icon">🧺</span>Basket
-          <span class="nav-count" id="sidebarBasketCount">0</span>
-        </button>
-        <button type="button" class="nav-link" onclick="handleOpenOrders()">
-          <span class="nav-icon">▤</span>My Orders
-          <span class="nav-count" id="sidebarOrdersCount">0</span>
-        </button>
-        <button type="button" class="nav-link" onclick="toggleBellPopoverFromSidebar()">
-          <span class="nav-icon">🔔</span>Notifications
-          <span class="nav-count" id="sidebarNotifCount">0</span>
-        </button>
+        <button type="button" class="nav-link active" data-section="top" onclick="scrollToSection('top')"><span class="nav-icon">◫</span>Explore</button>
+        <button type="button" class="nav-link" data-section="fullMenuSection" onclick="scrollToSection('fullMenuSection')"><span class="nav-icon">▦</span>All Dishes</button>
+        <button type="button" class="nav-link" onclick="handleOpenBasket()"><span class="nav-icon">🧺</span>Basket<span class="nav-count" id="sidebarBasketCount">0</span></button>
+        <button type="button" class="nav-link" onclick="handleOpenOrders()"><span class="nav-icon">▤</span>My Orders<span class="nav-count" id="sidebarOrdersCount">0</span></button>
+        <button type="button" class="nav-link" onclick="toggleBellPopoverFromSidebar()"><span class="nav-icon">🔔</span>Notifications<span class="nav-count" id="sidebarNotifCount">0</span></button>
       </nav>
-
       <div class="sidebar-bottom">
-        <div class="sidebar-tip">
-          <span class="tip-icon">✳</span>
-          <strong>Campus Students Only</strong>
-          <span>Superfast hostel delivery in 3–10 mins. Free delivery on campus.</span>
-        </div>
-        <div class="profile">
-          <div class="avatar" id="sidebarProfileAvatar">RC</div>
-          <div class="profile-copy">
-            <strong id="sidebarProfileName">Royal's Canteen</strong>
-            <span id="sidebarProfileRole">Sign in to order</span>
-          </div>
-        </div>
+        <div class="sidebar-tip"><span class="tip-icon">✳</span><strong>Campus Students Only</strong><span>Superfast hostel delivery in 3–10 mins. Free delivery on campus.</span></div>
+        <div class="profile"><div class="avatar" id="sidebarProfileAvatar">RC</div><div class="profile-copy"><strong id="sidebarProfileName">Royal's Canteen</strong><span id="sidebarProfileRole">Sign in to order</span></div></div>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
     <div class="main-content">
-      <!-- ==================== STICKY TOPBAR (MATCHING MAJOR PROJECT PART 1) ==================== -->
       <header class="topbar">
         <div class="flex items-center gap-3 min-w-0">
           <button type="button" class="mobile-menu" id="mobile-menu" onclick="toggleMobileSidebar()" aria-label="Open navigation">☰</button>
           <div class="breadcrumb">Royal's Canteen <span>/</span> <strong>Student Ordering</strong></div>
         </div>
-
-        <!-- Desktop Search Bar -->
         <div class="hidden md:flex flex-1 max-w-md mx-2">
           <div class="relative w-full">
-            <svg class="w-4 h-4 text-[#818a83] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-            </svg>
-            <input
-              id="headerSearchInput"
-              type="text"
-              placeholder="Search Masala Dosa, Biryani, Cold Coffee..."
-              oninput="handleSearch(this.value)"
-              class="w-full pl-9 pr-4 py-2 rounded-lg bg-[#f5f6f2] border border-[#e9ece6] focus:bg-white focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 text-xs sm:text-sm outline-none transition-all"
-            />
+            <svg class="w-4 h-4 text-[#818a83] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+            <input id="headerSearchInput" type="text" placeholder="Search Masala Dosa, Biryani, Cold Coffee..." oninput="handleSearch(this.value)" class="w-full pl-9 pr-4 py-2 rounded-lg bg-[#f5f6f2] border border-[#e9ece6] focus:bg-white focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 text-xs sm:text-sm outline-none transition-all"/>
           </div>
         </div>
-
-        <!-- Topbar Actions: Bell Icon, Orders, Basket, Status Pill, Auth -->
         <div class="topbar-actions">
-          <!-- Bell Icon Notification Button -->
-          <button
-            id="bellNotifBtn"
-            type="button"
-            popovertarget="userNotifPopover"
-            class="bell-trigger"
-            aria-label="Delivery and order notifications"
-            title="Order & Delivery Notifications"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+          <button id="bellNotifBtn" type="button" popovertarget="userNotifPopover" class="bell-trigger" aria-label="Delivery and order notifications" title="Order & Delivery Notifications">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
             <span id="bellUnreadBadge" class="bell-badge hidden">0</span>
           </button>
-
-          <!-- My Orders Button -->
-          <button
-            type="button"
-            onclick="handleOpenOrders()"
-            class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-semibold text-[#526056] hover:text-[#245c43] hover:bg-[#eaf3ec] border border-transparent hover:border-[#d7e8d9] transition-colors relative"
-            title="View your confirmed orders"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+          <button type="button" onclick="handleOpenOrders()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-semibold text-[#526056] hover:text-[#245c43] hover:bg-[#eaf3ec] border border-transparent hover:border-[#d7e8d9] transition-colors relative" title="View your confirmed orders">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
             <span class="hidden xl:inline">My Orders</span>
             <span id="ordersCountBadge" class="hidden min-w-[18px] h-[18px] px-1 rounded-full bg-[#202b25] text-white text-[10px] font-bold flex items-center justify-center">0</span>
           </button>
-
-          <!-- Basket Button -->
-          <button
-            type="button"
-            onclick="handleOpenBasket()"
-            class="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg text-xs font-bold bg-[#eaf3ec] text-[#245c43] hover:bg-[#245c43] hover:text-white transition-all relative"
-            title="Open Food Basket"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+          <button type="button" onclick="handleOpenBasket()" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg text-xs font-bold bg-[#eaf3ec] text-[#245c43] hover:bg-[#245c43] hover:text-white transition-all relative" title="Open Food Basket">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             <span class="hidden sm:inline">Basket</span>
             <span id="basketCountBadge" class="min-w-[19px] h-[19px] px-1 rounded-full bg-[#245c43] text-white text-[11px] font-bold flex items-center justify-center">0</span>
           </button>
-
           <span class="status-pill hidden xl:inline-flex"><span></span> Canteen open</span>
-
-          <!-- Auth / Student Account Area -->
           <div id="headerAuthArea" class="flex items-center"></div>
         </div>
       </header>
 
-      <!-- Anchored Bell Notification Popover -->
       <div id="userNotifPopover" popover="auto" class="notif-popover">
         <div class="notif-popover-header">
-          <div>
-            <h3 class="font-extrabold text-sm text-[#202b25] m-0">Royal's Canteen Alerts</h3>
-            <p class="text-[11px] text-[#667168] m-0">Live order &amp; delivery notifications</p>
-          </div>
+          <div><h3 class="font-extrabold text-sm text-[#202b25] m-0">Royal's Canteen Alerts</h3><p class="text-[11px] text-[#667168] m-0">Live order &amp; delivery notifications</p></div>
           <div class="flex items-center gap-2">
-            <button type="button" onclick="markAllUserNotificationsRead()" class="text-[11px] font-bold text-[#245c43] hover:underline bg-transparent border-0 cursor-pointer">
-              Mark all read
-            </button>
-            <button type="button" popovertarget="userNotifPopover" popovertargetaction="hide" class="w-7 h-7 rounded-md bg-[#f5f6f2] hover:bg-[#e9ece6] text-[#526056] font-bold text-xs flex items-center justify-center border-0 cursor-pointer" aria-label="Close notifications">
-              ✕
-            </button>
+            <button type="button" onclick="markAllUserNotificationsRead()" class="text-[11px] font-bold text-[#245c43] hover:underline bg-transparent border-0 cursor-pointer">Mark all read</button>
+            <button type="button" popovertarget="userNotifPopover" popovertargetaction="hide" class="w-7 h-7 rounded-md bg-[#f5f6f2] hover:bg-[#e9ece6] text-[#526056] font-bold text-xs flex items-center justify-center border-0 cursor-pointer" aria-label="Close notifications">✕</button>
           </div>
         </div>
         <div id="userNotifList" class="notif-popover-list"></div>
         <div class="px-4 py-2.5 border-t border-[#e9ece6] bg-[#fbfcfa] flex items-center justify-between">
           <span class="text-[11px] text-[#667168]">Synced live with Kitchen Admin</span>
-          <button type="button" onclick="closeBellPopover(); handleOpenOrders();" class="text-xs font-bold text-[#245c43] hover:underline bg-transparent border-0 cursor-pointer">
-            View My Orders →
-          </button>
+          <button type="button" onclick="closeBellPopover(); handleOpenOrders();" class="text-xs font-bold text-[#245c43] hover:underline bg-transparent border-0 cursor-pointer">View My Orders →</button>
         </div>
       </div>
 
-      <!-- Mobile Search Bar -->
       <div class="md:hidden px-4 pt-3 bg-[#f5f6f2]">
         <div class="relative w-full">
-          <svg class="w-4 h-4 text-[#818a83] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
-          <input
-            id="mobileSearchInput"
-            type="text"
-            placeholder="Search dishes, snacks, ingredients..."
-            oninput="handleSearch(this.value)"
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-[#e9ece6] focus:border-[#245c43] text-sm outline-none"
-          />
+          <svg class="w-4 h-4 text-[#818a83] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+          <input id="mobileSearchInput" type="text" placeholder="Search dishes, snacks, ingredients..." oninput="handleSearch(this.value)" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-[#e9ece6] focus:border-[#245c43] text-sm outline-none"/>
         </div>
       </div>
 
-      <!-- ==================== ACTIVE DELIVERY TRACKER BANNER (UPDATES LIVE FROM ADMIN) ==================== -->
       <div id="activeOrderBanner" class="hidden bg-[#245c43] text-white border-b border-[#194733]">
         <div class="max-w-[1440px] mx-auto px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <span class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-lg">🛵</span>
-            <div>
-              <p class="text-sm font-bold m-0" id="activeBannerTitle">Order Confirmed! Preparing your fresh food...</p>
-              <p class="text-xs text-[#d7e8d9] m-0" id="activeBannerSub">Delivering to Boys Hostel in 6 mins</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="handleOpenOrders()" class="px-3.5 py-1.5 rounded-lg bg-white text-[#194733] text-xs font-bold hover:bg-[#eaf3ec] transition-colors">
-              View Order
-            </button>
-            <button onclick="document.getElementById('activeOrderBanner').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-white/15 text-white" aria-label="Dismiss banner">
-              ✕
-            </button>
-          </div>
+          <div class="flex items-center gap-3"><span class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-lg">🛵</span><div><p class="text-sm font-bold m-0" id="activeBannerTitle">Order Confirmed! Preparing your fresh food...</p><p class="text-xs text-[#d7e8d9] m-0" id="activeBannerSub">Delivering to Boys Hostel in 6 mins</p></div></div>
+          <div class="flex items-center gap-2"><button onclick="handleOpenOrders()" class="px-3.5 py-1.5 rounded-lg bg-white text-[#194733] text-xs font-bold hover:bg-[#eaf3ec]">View Order</button><button onclick="document.getElementById('activeOrderBanner').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-white/15 text-white" aria-label="Dismiss banner">✕</button></div>
         </div>
       </div>
 
-      <!-- ==================== MAIN PAGE CONTENT ==================== -->
       <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-10 flex-1">
-
-        <!-- ==================== ROYAL'S CANTEEN HERO CARD ==================== -->
         <section id="top" class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#194733] via-[#245c43] to-[#2d6e51] text-white border border-[#194733] shadow-sm">
-          <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 18% 25%, #b8db9c 0%, transparent 45%), radial-gradient(circle at 85% 75%, #e99b54 0%, transparent 40%);"></div>
-          <div class="px-6 sm:px-8 py-7 sm:py-9 relative">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              <div class="lg:col-span-7 space-y-3.5">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/12 border border-white/20 text-xs font-semibold text-[#eaf3ec]">
-                  <span class="w-2 h-2 rounded-full bg-[#b8db9c] animate-pulse"></span>
-                  <span>ROYAL'S CANTEEN • Boys &amp; Girls Hostel Delivery</span>
-                </div>
-                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight font-display">
-                  Fresh Canteen Food, Delivered in <span class="text-[#194733] bg-[#b8db9c] px-2.5 py-0.5 rounded-xl inline-block mt-1 sm:mt-0">3–10 Mins</span>
-                </h1>
-                <p class="text-[#e2efe4] text-sm sm:text-base max-w-2xl leading-relaxed">
-                  Slide through multi-angle food photos, inspect every ingredient used, and order directly to your Hostel Room with instant UPI QR or Cash on Delivery.
-                </p>
-                <div class="flex flex-wrap items-center gap-3 pt-1">
-                  <button
-                    onclick="scrollToSection('carouselsSection')"
-                    class="px-5 py-2.5 rounded-lg bg-white hover:bg-[#eaf3ec] text-[#194733] font-bold text-sm shadow-sm transition-all active:scale-95"
-                  >
-                    Explore Campus Menu
-                  </button>
-                  <button
-                    id="heroAuthBtn"
-                    onclick="openAuthModal('register')"
-                    class="px-5 py-2.5 rounded-lg bg-white/12 hover:bg-white/20 border border-white/25 text-white font-semibold text-sm transition-all"
-                  >
-                    Student Register / Sign In
-                  </button>
-                </div>
+          <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image:radial-gradient(circle at 18% 25%,#b8db9c 0%,transparent 45%),radial-gradient(circle at 85% 75%,#e99b54 0%,transparent 40%)"></div>
+          <div class="px-6 sm:px-8 py-7 sm:py-9 relative grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="lg:col-span-7 space-y-3.5">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/12 border border-white/20 text-xs font-semibold text-[#eaf3ec]"><span class="w-2 h-2 rounded-full bg-[#b8db9c] animate-pulse"></span><span>ROYAL'S CANTEEN • Boys &amp; Girls Hostel Delivery</span></div>
+              <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight font-display">Fresh Canteen Food, Delivered in <span class="text-[#194733] bg-[#b8db9c] px-2.5 py-0.5 rounded-xl inline-block mt-1 sm:mt-0">3–10 Mins</span></h1>
+              <p class="text-[#e2efe4] text-sm sm:text-base max-w-2xl leading-relaxed">Slide through multi-angle food photos, inspect every ingredient used, and order directly to your Hostel Room with instant UPI QR or Cash on Delivery.</p>
+              <div class="flex flex-wrap items-center gap-3 pt-1">
+                <button onclick="scrollToSection('carouselsSection')" class="px-5 py-2.5 rounded-lg bg-white hover:bg-[#eaf3ec] text-[#194733] font-bold text-sm shadow-sm transition-all active:scale-95">Explore Campus Menu</button>
+                <button id="heroAuthBtn" onclick="openAuthModal('register')" class="px-5 py-2.5 rounded-lg bg-white/12 hover:bg-white/20 border border-white/25 text-white font-semibold text-sm transition-all">Student Register / Sign In</button>
               </div>
-
-              <!-- Quick Stats Cards -->
-              <div class="lg:col-span-5 grid grid-cols-3 gap-3">
-                <div class="rounded-xl bg-white/12 border border-white/20 backdrop-blur-sm p-3.5 text-center">
-                  <div class="text-xl sm:text-2xl font-extrabold text-white font-display">3–10m</div>
-                  <div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Express Delivery</div>
-                </div>
-                <div class="rounded-xl bg-white/12 border border-white/20 backdrop-blur-sm p-3.5 text-center">
-                  <div class="text-xl sm:text-2xl font-extrabold text-[#b8db9c] font-display">100%</div>
-                  <div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Ingredient Info</div>
-                </div>
-                <div class="rounded-xl bg-white/12 border border-white/20 backdrop-blur-sm p-3.5 text-center">
-                  <div class="text-xl sm:text-2xl font-extrabold text-[#f7cf9e] font-display">₹0</div>
-                  <div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Hostel Fee</div>
-                </div>
-              </div>
+            </div>
+            <div class="lg:col-span-5 grid grid-cols-3 gap-3">
+              <div class="rounded-xl bg-white/12 border border-white/20 p-3.5 text-center"><div class="text-xl sm:text-2xl font-extrabold text-white font-display">3–10m</div><div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Express Delivery</div></div>
+              <div class="rounded-xl bg-white/12 border border-white/20 p-3.5 text-center"><div class="text-xl sm:text-2xl font-extrabold text-[#b8db9c] font-display">100%</div><div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Ingredient Info</div></div>
+              <div class="rounded-xl bg-white/12 border border-white/20 p-3.5 text-center"><div class="text-xl sm:text-2xl font-extrabold text-[#f7cf9e] font-display">₹0</div><div class="text-[11px] text-[#d7e8d9] mt-1 font-medium">Hostel Fee</div></div>
             </div>
           </div>
         </section>
 
-        <!-- ===== HORIZONTAL SLIDABLE FOOD CAROUSELS ===== -->
-        <section id="carouselsSection" class="space-y-9">
-          <!-- Carousels injected dynamically via JS -->
-        </section>
+        <section id="carouselsSection" class="space-y-9"></section>
 
-        <!-- ===== FULL FILTERABLE & SEARCHABLE CAMPUS MENU ===== -->
         <section id="fullMenuSection" class="pt-6 border-t border-[#e9ece6] space-y-6">
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <span class="text-[11px] font-bold uppercase tracking-[1.4px] text-[#245c43]">Royal's Canteen Menu</span>
-              <h2 class="text-2xl sm:text-3xl font-extrabold text-[#202b25] mt-1">All Canteen Dishes</h2>
-              <p class="text-sm text-[#667168] mt-1">Slide photos right on any card or click a dish to view ingredients, delivery time &amp; order.</p>
-            </div>
-
-            <!-- Filters & Sorting Controls -->
+            <div><span class="text-[11px] font-bold uppercase tracking-[1.4px] text-[#245c43]">Royal's Canteen Menu</span><h2 class="text-2xl sm:text-3xl font-extrabold text-[#202b25] mt-1">All Canteen Dishes</h2><p class="text-sm text-[#667168] mt-1">Slide photos right on any card or click a dish to view ingredients, delivery time &amp; order.</p></div>
             <div class="flex flex-wrap items-center gap-2.5">
-              <!-- Veg Only Toggle -->
-              <button
-                id="vegToggleBtn"
-                onclick="toggleVegOnly()"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-[#e9ece6] bg-white text-sm font-semibold text-[#526056] hover:border-[#245c43] transition-all"
-              >
-                <span class="w-4 h-4 rounded border-2 border-[#245c43] flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-[#245c43]"></span>
-                </span>
-                <span>Pure Veg</span>
-              </button>
-
-              <!-- Sort Dropdown -->
-              <select
-                id="sortSelect"
-                onchange="handleSort(this.value)"
-                class="px-3.5 py-2 rounded-lg border border-[#e9ece6] bg-white text-sm font-semibold text-[#526056] outline-none focus:border-[#245c43]"
-              >
-                <option value="featured">Sort: Featured</option>
-                <option value="time-asc">Fastest Delivery (3–10m)</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="rating-desc">Highest Rated</option>
+              <button id="vegToggleBtn" onclick="toggleVegOnly()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-[#e9ece6] bg-white text-sm font-semibold text-[#526056] hover:border-[#245c43] transition-all"><span class="w-4 h-4 rounded border-2 border-[#245c43] flex items-center justify-center"><span class="w-2 h-2 rounded-full bg-[#245c43]"></span></span><span>Pure Veg</span></button>
+              <select id="sortSelect" onchange="handleSort(this.value)" class="px-3.5 py-2 rounded-lg border border-[#e9ece6] bg-white text-sm font-semibold text-[#526056] outline-none focus:border-[#245c43]">
+                <option value="featured">Sort: Featured</option><option value="time-asc">Fastest Delivery (3–10m)</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="rating-desc">Highest Rated</option>
               </select>
             </div>
           </div>
-
-          <!-- Category Filter Pills -->
-          <div id="categoryFilterBar" class="flex items-center gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <!-- Rendered by JS -->
-          </div>
-
-          <!-- Menu Grid -->
-          <div id="fullMenuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            <!-- Rendered by JS -->
-          </div>
-
-          <!-- Empty Search State -->
-          <div id="emptyMenuState" class="hidden bg-white rounded-2xl border border-[#e9ece6] p-10 text-center">
-            <div class="text-4xl mb-3">🍽️</div>
-            <h3 class="text-lg font-bold text-[#202b25]">No matching dishes found</h3>
-            <p class="text-sm text-[#667168] mt-1">Try searching for another dish or resetting your category filters.</p>
-            <button onclick="resetFilters()" class="mt-4 px-5 py-2.5 rounded-lg bg-[#245c43] text-white text-sm font-semibold hover:bg-[#194733]">
-              Reset Filters
-            </button>
-          </div>
+          <div id="categoryFilterBar" class="flex items-center gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"></div>
+          <div id="fullMenuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+          <div id="emptyMenuState" class="hidden bg-white rounded-2xl border border-[#e9ece6] p-10 text-center"><div class="text-4xl mb-3">🍽️</div><h3 class="text-lg font-bold text-[#202b25]">No matching dishes found</h3><p class="text-sm text-[#667168] mt-1">Try searching for another dish or resetting your category filters.</p><button onclick="resetFilters()" class="mt-4 px-5 py-2.5 rounded-lg bg-[#245c43] text-white text-sm font-semibold hover:bg-[#194733]">Reset Filters</button></div>
         </section>
       </main>
 
-      <!-- ==================== FOOTER ==================== -->
       <footer class="bg-white border-t border-[#e9ece6] mt-12">
         <div class="max-w-[1440px] mx-auto px-4 sm:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-[#667168]">
-          <div class="flex items-center gap-2">
-            <span class="font-extrabold text-[#202b25] font-display">canteen<span class="text-[#245c43]">ROYAL</span></span>
-            <span>•</span>
-            <span>Royal's Canteen Official Student Portal</span>
-          </div>
-          <div class="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
-            <span>Boys Hostel &amp; Girls Hostel Only</span>
-            <span>•</span>
-            <span>3–10 Min Delivery Guarantee</span>
-            <span>•</span>
-            <span>UPI &amp; Cash on Delivery</span>
-          </div>
+          <div class="flex items-center gap-2"><span class="font-extrabold text-[#202b25] font-display">canteen<span class="text-[#245c43]">ROYAL</span></span><span>•</span><span>Royal's Canteen Official Student Portal</span></div>
+          <div class="flex flex-wrap items-center justify-center gap-4 text-xs font-medium"><span>Boys Hostel &amp; Girls Hostel Only</span><span>•</span><span>3–10 Min Delivery Guarantee</span><span>•</span><span>UPI &amp; Cash on Delivery</span></div>
         </div>
       </footer>
     </div>
   </div>
 
-  <!-- ==================== AUTHENTICATION MODAL (REGISTER & SIGN IN) ==================== -->
+  <!-- AUTH MODAL -->
   <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#19261d]/60 backdrop-blur-sm">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-[#e9ece6]">
-      <!-- Header -->
       <div class="bg-gradient-to-r from-[#194733] to-[#245c43] px-6 py-5 text-white flex items-start justify-between">
-        <div>
-          <span class="inline-block text-[11px] font-bold uppercase tracking-wider bg-white/15 px-2.5 py-0.5 rounded-full mb-1.5">Royal's Canteen • Students Only</span>
-          <h3 class="text-xl font-extrabold" id="authModalTitle">Student Sign In</h3>
-          <p class="text-xs text-[#d7e8d9] mt-0.5" id="authModalSub">Sign in to inspect ingredients &amp; order to your hostel.</p>
-        </div>
-        <button onclick="closeAuthModal()" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold transition-colors" aria-label="Close modal">
-          ✕
-        </button>
+        <div><span class="inline-block text-[11px] font-bold uppercase tracking-wider bg-white/15 px-2.5 py-0.5 rounded-full mb-1.5">Royal's Canteen • Students Only</span><h3 class="text-xl font-extrabold" id="authModalTitle">Student Sign In</h3><p class="text-xs text-[#d7e8d9] mt-0.5" id="authModalSub">Sign in to inspect ingredients &amp; order to your hostel.</p></div>
+        <button onclick="closeAuthModal()" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold" aria-label="Close modal">✕</button>
       </div>
-
-      <!-- Tabs: Sign In vs Register -->
-      <div class="px-6 pt-5">
-        <div class="grid grid-cols-2 p-1 rounded-xl bg-[#f5f6f2] border border-[#e9ece6]">
-          <button id="tabSignIn" onclick="switchAuthTab('signin')" class="py-2.5 rounded-lg text-sm font-bold transition-all">
-            Sign In
-          </button>
-          <button id="tabRegister" onclick="switchAuthTab('register')" class="py-2.5 rounded-lg text-sm font-bold transition-all">
-            Register
-          </button>
-        </div>
-      </div>
-
-      <!-- Inline Auth Feedback Banner -->
+      <div class="px-6 pt-5"><div class="grid grid-cols-2 p-1 rounded-xl bg-[#f5f6f2] border border-[#e9ece6]"><button id="tabSignIn" onclick="switchAuthTab('signin')" class="py-2.5 rounded-lg text-sm font-bold">Sign In</button><button id="tabRegister" onclick="switchAuthTab('register')" class="py-2.5 rounded-lg text-sm font-bold">Register</button></div></div>
       <div id="authMessageBox" class="hidden mx-6 mt-4 px-4 py-3 rounded-xl text-xs font-semibold"></div>
-
-      <!-- SIGN IN FORM (ONLY Name and Password) -->
       <form id="signInForm" onsubmit="handleSignIn(event)" class="p-6 space-y-4">
-        <div>
-          <label for="loginName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Student Name</label>
-          <input
-            id="loginName"
-            type="text"
-            required
-            placeholder="Enter your registered Name"
-            class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-          />
-        </div>
-        <div>
-          <label for="loginPassword" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Password</label>
-          <input
-            id="loginPassword"
-            type="password"
-            required
-            placeholder="Enter your Password"
-            class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-          />
-        </div>
-
-        <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all active:scale-[0.99]">
-          Sign In as Campus Student
-        </button>
-
-        <!-- Pre-registered Demo Account Box -->
-        <div class="rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-3.5 text-xs text-[#526056] flex items-center justify-between gap-2">
-          <div>
-            <p class="font-bold text-[#202b25]">Quick Demo Account:</p>
-            <p class="mt-0.5">Name: <span class="font-mono font-bold text-[#202b25]">Demo Student</span> • Pass: <span class="font-mono font-bold text-[#202b25]">password123</span></p>
-          </div>
-          <button type="button" onclick="fillDemoCredentials()" class="shrink-0 px-3 py-1.5 rounded-lg bg-[#202b25] text-white font-semibold hover:bg-[#245c43] transition-colors">
-            Auto-fill
-          </button>
-        </div>
+        <div><label for="loginName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Student Name</label><input id="loginName" type="text" required placeholder="Enter your registered Name" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"/></div>
+        <div><label for="loginPassword" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Password</label><input id="loginPassword" type="password" required placeholder="Enter your Password" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"/></div>
+        <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Sign In as Campus Student</button>
+        <div class="rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-3.5 text-xs text-[#526056] flex items-center justify-between gap-2"><div><p class="font-bold text-[#202b25]">Quick Demo Account:</p><p class="mt-0.5">Name: <span class="font-mono font-bold text-[#202b25]">Demo Student</span> • Pass: <span class="font-mono font-bold text-[#202b25]">password123</span></p></div><button type="button" onclick="fillDemoCredentials()" class="shrink-0 px-3 py-1.5 rounded-lg bg-[#202b25] text-white font-semibold hover:bg-[#245c43]">Auto-fill</button></div>
       </form>
-
-      <!-- REGISTER FORM (ONLY Name, Email address, and Password) -->
       <form id="registerForm" onsubmit="handleRegister(event)" class="hidden p-6 space-y-4">
-        <div>
-          <label for="regName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Name</label>
-          <input
-            id="regName"
-            type="text"
-            required
-            placeholder="e.g. Aarav Sharma"
-            class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-          />
-        </div>
-        <div>
-          <label for="regEmail" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Email address</label>
-          <input
-            id="regEmail"
-            type="email"
-            required
-            placeholder="e.g. aarav@campus.edu"
-            class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-          />
-        </div>
-        <div>
-          <label for="regPassword" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Password</label>
-          <input
-            id="regPassword"
-            type="password"
-            required
-            minlength="4"
-            placeholder="Create a password (min 4 chars)"
-            class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-          />
-        </div>
-
-        <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all active:scale-[0.99]">
-          Register Campus Account
-        </button>
-        <p class="text-[11px] text-center text-[#667168]">
-          After registration, you can sign in anytime using just your <strong>Name</strong> and <strong>Password</strong>.
-        </p>
+        <div><label for="regName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Name</label><input id="regName" type="text" required placeholder="e.g. Aarav Sharma" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
+        <div><label for="regEmail" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Email address</label><input id="regEmail" type="email" required placeholder="e.g. aarav@campus.edu" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
+        <div><label for="regPassword" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Password</label><input id="regPassword" type="password" required minlength="4" placeholder="Create a password (min 4 chars)" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
+        <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Register Campus Account</button>
+        <p class="text-[11px] text-center text-[#667168]">After registration, sign in anytime using your <strong>Name</strong> and <strong>Password</strong>.</p>
       </form>
     </div>
   </div>
 
-  <!-- ==================== FOOD ITEM DETAILS MODAL ==================== -->
+  <!-- ITEM DETAILS MODAL -->
   <div id="itemModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-[#19261d]/65 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col border border-[#e9ece6]">
-      <!-- Top Bar -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-[#e9ece6] shrink-0">
-        <div class="flex items-center gap-2">
-          <span id="modalVegBadge"></span>
-          <span id="modalCategoryPill" class="text-xs font-bold uppercase tracking-wider text-[#526056] bg-[#f5f6f2] px-2.5 py-1 rounded-lg"></span>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-[#e9ece6] shrink-0"><div class="flex items-center gap-2"><span id="modalVegBadge"></span><span id="modalCategoryPill" class="text-xs font-bold uppercase tracking-wider text-[#526056] bg-[#f5f6f2] px-2.5 py-1 rounded-lg"></span></div><button onclick="closeItemModal()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold" aria-label="Close item details">✕</button></div>
+      <div class="overflow-y-auto flex-1 p-5 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div class="md:col-span-6 space-y-3">
+          <div class="relative rounded-xl overflow-hidden bg-[#f5f6f2] aspect-[4/3]" id="modalImageStage">
+            <img id="modalMainImage" src="" alt="" class="w-full h-full object-cover transition-all duration-300"/>
+            <span id="modalImageCaption" class="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-[#202b25]/80 text-white text-xs font-semibold"></span>
+            <span id="modalImageCounter" class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#202b25]/80 text-white text-xs font-bold">1 / 3</span>
+            <button onclick="slideModalImage(-1)" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#202b25] shadow-md flex items-center justify-center font-bold" aria-label="Previous dish image">‹</button>
+            <button onclick="slideModalImage(1)" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#202b25] shadow-md flex items-center justify-center font-bold" aria-label="Next dish image">›</button>
+          </div>
+          <div id="modalThumbnails" class="grid grid-cols-3 gap-2.5"></div>
         </div>
-        <button onclick="closeItemModal()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold transition-colors" aria-label="Close item details">
-          ✕
-        </button>
-      </div>
-
-      <!-- Scrollable Modal Body -->
-      <div class="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <!-- Left: Multi-Image Slider & Thumbnails -->
-          <div class="md:col-span-6 space-y-3">
-            <div class="relative rounded-xl overflow-hidden bg-[#f5f6f2] aspect-[4/3] group" id="modalImageStage">
-              <img id="modalMainImage" src="" alt="" class="w-full h-full object-cover transition-all duration-300" />
-              <span id="modalImageCaption" class="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-[#202b25]/80 text-white text-xs font-semibold backdrop-blur-sm"></span>
-              <span id="modalImageCounter" class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#202b25]/80 text-white text-xs font-bold backdrop-blur-sm">1 / 3</span>
-
-              <button
-                onclick="slideModalImage(-1)"
-                class="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#202b25] shadow-md flex items-center justify-center font-bold transition-all"
-                aria-label="Previous dish image"
-              >
-                ‹
-              </button>
-              <button
-                onclick="slideModalImage(1)"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#202b25] shadow-md flex items-center justify-center font-bold transition-all"
-                aria-label="Next dish image"
-              >
-                ›
-              </button>
-            </div>
-
-            <div id="modalThumbnails" class="grid grid-cols-3 gap-2.5"></div>
-          </div>
-
-          <!-- Right: Item Info, Delivery Time & Ingredients -->
-          <div class="md:col-span-6 flex flex-col justify-between space-y-4">
-            <div class="space-y-3">
-              <div class="flex items-start justify-between gap-3">
-                <h3 id="modalItemName" class="text-2xl font-extrabold text-[#202b25] leading-tight"></h3>
-                <span id="modalItemRating" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#245c43] text-white text-xs font-bold"></span>
-              </div>
-
-              <div class="flex items-baseline gap-2">
-                <span id="modalItemPrice" class="text-2xl font-extrabold text-[#245c43]"></span>
-                <span class="text-xs text-[#667168] font-medium">Inclusive of campus taxes • Free Hostel Delivery</span>
-              </div>
-
-              <div class="rounded-xl bg-[#fff7ec] border border-[#f2dec0] p-3.5 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-[#f9e8ce] text-[#9b6220] flex items-center justify-center text-lg shrink-0">⚡</div>
-                <div>
-                  <p class="text-xs font-bold uppercase tracking-wider text-[#9b6220]">Fast Campus Delivery Time</p>
-                  <p id="modalDeliveryTime" class="text-sm font-extrabold text-[#202b25] mt-0.5"></p>
-                </div>
-              </div>
-
-              <p id="modalItemDesc" class="text-sm text-[#526056] leading-relaxed"></p>
-
-              <div class="pt-1">
-                <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#526056] flex items-center gap-1.5">
-                    <span>🥗</span> Ingredients Used (Transparency Promise)
-                  </h4>
-                </div>
-                <div id="modalIngredientsList" class="flex flex-wrap gap-2"></div>
-              </div>
-            </div>
-          </div>
+        <div class="md:col-span-6 space-y-3">
+          <div class="flex items-start justify-between gap-3"><h3 id="modalItemName" class="text-2xl font-extrabold text-[#202b25] leading-tight"></h3><span id="modalItemRating" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#245c43] text-white text-xs font-bold"></span></div>
+          <div class="flex items-baseline gap-2"><span id="modalItemPrice" class="text-2xl font-extrabold text-[#245c43]"></span><span class="text-xs text-[#667168] font-medium">Inclusive of campus taxes • Free Hostel Delivery</span></div>
+          <div class="rounded-xl bg-[#fff7ec] border border-[#f2dec0] p-3.5 flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-[#f9e8ce] text-[#9b6220] flex items-center justify-center text-lg shrink-0">⚡</div><div><p class="text-xs font-bold uppercase tracking-wider text-[#9b6220]">Fast Campus Delivery Time</p><p id="modalDeliveryTime" class="text-sm font-extrabold text-[#202b25] mt-0.5"></p></div></div>
+          <p id="modalItemDesc" class="text-sm text-[#526056] leading-relaxed"></p>
+          <div class="pt-1"><h4 class="text-xs font-extrabold uppercase tracking-wider text-[#526056] mb-2">🥗 Ingredients Used (Transparency Promise)</h4><div id="modalIngredientsList" class="flex flex-wrap gap-2"></div></div>
         </div>
       </div>
-
-      <!-- Sticky Modal Action Footer -->
       <div class="px-5 sm:px-6 py-4 bg-[#f8faf6] border-t border-[#e9ece6] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
-        <div class="flex items-center justify-between sm:justify-start gap-3">
-          <span class="text-xs font-bold uppercase tracking-wider text-[#667168]">Quantity</span>
-          <div class="inline-flex items-center rounded-lg bg-white border border-[#e9ece6] p-1">
-            <button onclick="changeModalQty(-1)" class="w-9 h-9 rounded-md hover:bg-[#f5f6f2] font-bold text-lg text-[#202b25] transition-colors">−</button>
-            <span id="modalQtyValue" class="w-10 text-center font-extrabold text-[#202b25]">1</span>
-            <button onclick="changeModalQty(1)" class="w-9 h-9 rounded-md hover:bg-[#eaf3ec] font-bold text-lg text-[#245c43] transition-colors">+</button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-          <button
-            onclick="handleModalAddToBasket()"
-            class="px-5 py-2.5 rounded-lg border-2 border-[#245c43] text-[#245c43] bg-white hover:bg-[#eaf3ec] font-bold text-sm transition-all active:scale-95"
-          >
-            Add to Basket
-          </button>
-          <button
-            onclick="handleModalBuyNow()"
-            class="px-6 py-2.5 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all active:scale-95"
-          >
-            Buy • <span id="modalBuyTotal">₹0</span>
-          </button>
-        </div>
+        <div class="flex items-center justify-between sm:justify-start gap-3"><span class="text-xs font-bold uppercase tracking-wider text-[#667168]">Quantity</span><div class="inline-flex items-center rounded-lg bg-white border border-[#e9ece6] p-1"><button onclick="changeModalQty(-1)" class="w-9 h-9 rounded-md hover:bg-[#f5f6f2] font-bold text-lg text-[#202b25]">−</button><span id="modalQtyValue" class="w-10 text-center font-extrabold text-[#202b25]">1</span><button onclick="changeModalQty(1)" class="w-9 h-9 rounded-md hover:bg-[#eaf3ec] font-bold text-lg text-[#245c43]">+</button></div></div>
+        <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center"><button onclick="handleModalAddToBasket()" class="px-5 py-2.5 rounded-lg border-2 border-[#245c43] text-[#245c43] bg-white hover:bg-[#eaf3ec] font-bold text-sm">Add to Basket</button><button onclick="handleModalBuyNow()" class="px-6 py-2.5 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Buy • <span id="modalBuyTotal">₹0</span></button></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== SLIDE-OVER BASKET DRAWER ==================== -->
+  <!-- BASKET DRAWER -->
   <div id="basketOverlay" class="fixed inset-0 z-50 hidden bg-[#19261d]/55 backdrop-blur-sm">
     <div onclick="closeBasket()" class="absolute inset-0"></div>
     <aside id="basketDrawer" class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col border-l border-[#e9ece6]">
-      <div class="px-6 py-5 border-b border-[#e9ece6] flex items-center justify-between">
-        <div>
-          <h3 class="text-xl font-extrabold text-[#202b25] flex items-center gap-2">
-            Your Food Basket
-            <span id="drawerBasketCount" class="text-xs font-bold px-2 py-0.5 rounded-full bg-[#eaf3ec] text-[#245c43]">0 items</span>
-          </h3>
-          <p class="text-xs text-[#667168] mt-0.5">Order multiple items together to your hostel room</p>
-        </div>
-        <button onclick="closeBasket()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold" aria-label="Close basket">
-          ✕
-        </button>
-      </div>
-
+      <div class="px-6 py-5 border-b border-[#e9ece6] flex items-center justify-between"><div><h3 class="text-xl font-extrabold text-[#202b25] flex items-center gap-2">Your Food Basket <span id="drawerBasketCount" class="text-xs font-bold px-2 py-0.5 rounded-full bg-[#eaf3ec] text-[#245c43]">0 items</span></h3><p class="text-xs text-[#667168] mt-0.5">Order multiple items together to your hostel room</p></div><button onclick="closeBasket()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold" aria-label="Close basket">✕</button></div>
       <div id="basketItemsContainer" class="flex-1 overflow-y-auto p-5 space-y-3.5"></div>
-
       <div id="basketFooter" class="border-t border-[#e9ece6] bg-[#f8faf6] p-5 space-y-4">
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-[#526056]">
-            <span>Items Subtotal</span>
-            <span id="basketSubtotal" class="font-semibold text-[#202b25]">₹0</span>
-          </div>
-          <div class="flex justify-between text-[#526056]">
-            <span>Est. Delivery Time</span>
-            <span id="basketEstTime" class="font-semibold text-[#9b6220]">3–10 mins</span>
-          </div>
-          <div class="flex justify-between text-[#526056]">
-            <span>Campus Hostel Delivery</span>
-            <span class="font-bold text-[#245c43]">FREE</span>
-          </div>
-          <div class="flex justify-between text-base font-extrabold text-[#202b25] pt-2 border-t border-[#e9ece6]">
-            <span>Total Payable</span>
-            <span id="basketTotal" class="text-[#245c43]">₹0</span>
-          </div>
+          <div class="flex justify-between text-[#526056]"><span>Items Subtotal</span><span id="basketSubtotal" class="font-semibold text-[#202b25]">₹0</span></div>
+          <div class="flex justify-between text-[#526056]"><span>Est. Delivery Time</span><span id="basketEstTime" class="font-semibold text-[#9b6220]">3–10 mins</span></div>
+          <div class="flex justify-between text-[#526056]"><span>Campus Hostel Delivery</span><span class="font-bold text-[#245c43]">FREE</span></div>
+          <div class="flex justify-between text-base font-extrabold text-[#202b25] pt-2 border-t border-[#e9ece6]"><span>Total Payable</span><span id="basketTotal" class="text-[#245c43]">₹0</span></div>
         </div>
-
-        <button
-          onclick="handleBasketBuy()"
-          class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all active:scale-[0.99]"
-        >
-          Buy All Basket Items
-        </button>
+        <button onclick="handleBasketBuy()" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Buy All Basket Items</button>
       </div>
     </aside>
   </div>
 
-  <!-- ==================== CHECKOUT, PAYMENT, RECEIPT & CONFIRM MODAL ==================== -->
+  <!-- CHECKOUT MODAL -->
   <div id="checkoutModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-[#19261d]/70 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col border border-[#e9ece6]">
-      <!-- Checkout Header with Stepper -->
       <div class="px-6 py-4 bg-[#194733] text-white shrink-0">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h3 class="text-lg font-extrabold" id="checkoutHeaderTitle">Royal's Canteen Checkout</h3>
-            <p class="text-xs text-[#d7e8d9]" id="checkoutHeaderSub">Fast hostel delivery in 3–10 minutes</p>
-          </div>
-          <button onclick="closeCheckoutModal()" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold" aria-label="Close checkout">
-            ✕
-          </button>
-        </div>
-        <div class="grid grid-cols-3 gap-2 text-[11px] font-bold">
-          <div id="stepPill1" class="px-3 py-1.5 rounded-lg bg-white text-[#194733] text-center">1. Student Details</div>
-          <div id="stepPill2" class="px-3 py-1.5 rounded-lg bg-white/15 text-white/80 text-center">2. Payment</div>
-          <div id="stepPill3" class="px-3 py-1.5 rounded-lg bg-white/15 text-white/80 text-center">3. Receipt &amp; Confirm</div>
-        </div>
+        <div class="flex items-center justify-between mb-3"><div><h3 class="text-lg font-extrabold" id="checkoutHeaderTitle">Royal's Canteen Checkout</h3><p class="text-xs text-[#d7e8d9]" id="checkoutHeaderSub">Fast hostel delivery in 3–10 minutes</p></div><button onclick="closeCheckoutModal()" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold" aria-label="Close checkout">✕</button></div>
+        <div class="grid grid-cols-3 gap-2 text-[11px] font-bold"><div id="stepPill1" class="px-3 py-1.5 rounded-lg bg-white text-[#194733] text-center">1. Student Details</div><div id="stepPill2" class="px-3 py-1.5 rounded-lg bg-white/15 text-white/80 text-center">2. Payment</div><div id="stepPill3" class="px-3 py-1.5 rounded-lg bg-white/15 text-white/80 text-center">3. Receipt &amp; Confirm</div></div>
       </div>
-
-      <!-- Checkout Scrollable Body -->
       <div class="flex-1 overflow-y-auto p-5 sm:p-6">
-
-        <!-- ===== STEP 1: STUDENT DELIVERY DETAILS ===== -->
         <form id="checkoutStep1" onsubmit="goToPaymentStep(event)" class="space-y-5">
-          <div class="rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-extrabold uppercase tracking-wider text-[#667168]">Order Summary</span>
-              <span id="step1EstDelivery" class="text-xs font-bold text-[#9b6220] bg-[#fff3e6] px-2.5 py-0.5 rounded-full"></span>
-            </div>
-            <div id="step1ItemsList" class="space-y-1.5 text-sm"></div>
-            <div class="flex items-center justify-between pt-2.5 mt-2.5 border-t border-[#e9ece6] font-extrabold text-[#202b25]">
-              <span>Grand Total</span>
-              <span id="step1TotalAmount" class="text-lg text-[#245c43]">₹0</span>
-            </div>
-          </div>
-
+          <div class="rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-4"><div class="flex items-center justify-between mb-2"><span class="text-xs font-extrabold uppercase tracking-wider text-[#667168]">Order Summary</span><span id="step1EstDelivery" class="text-xs font-bold text-[#9b6220] bg-[#fff3e6] px-2.5 py-0.5 rounded-full"></span></div><div id="step1ItemsList" class="space-y-1.5 text-sm"></div><div class="flex items-center justify-between pt-2.5 mt-2.5 border-t border-[#e9ece6] font-extrabold text-[#202b25]"><span>Grand Total</span><span id="step1TotalAmount" class="text-lg text-[#245c43]">₹0</span></div></div>
           <div id="step1ErrorBox" class="hidden px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold"></div>
-
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label for="chkName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">
-                Name <span class="text-[#245c43] normal-case font-semibold">(Auto-filled)</span>
-              </label>
-              <input
-                id="chkName"
-                type="text"
-                readonly
-                class="w-full px-4 py-2.5 rounded-lg bg-[#f5f6f2] border border-[#e9ece6] text-[#354139] font-semibold text-sm cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label for="chkRegNo" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Registration No. *</label>
-              <input
-                id="chkRegNo"
-                type="text"
-                required
-                placeholder="e.g. 2024CS0142"
-                oninput="updateComputedAddress()"
-                class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-              />
-            </div>
+            <div><label for="chkName" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Name <span class="text-[#245c43] normal-case font-semibold">(Auto-filled)</span></label><input id="chkName" type="text" readonly class="w-full px-4 py-2.5 rounded-lg bg-[#f5f6f2] border border-[#e9ece6] text-[#354139] font-semibold text-sm cursor-not-allowed"/></div>
+            <div><label for="chkRegNo" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Registration No. *</label><input id="chkRegNo" type="text" required placeholder="e.g. 2024CS0142" oninput="updateComputedAddress()" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
           </div>
-
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-2">Hostel (Select One) *</label>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="cursor-pointer">
-                <input type="radio" name="hostelOption" value="Boys Hostel" checked onchange="updateComputedAddress()" class="peer sr-only" />
-                <div class="p-3.5 rounded-xl border-2 border-[#e9ece6] peer-checked:border-[#245c43] peer-checked:bg-[#eaf3ec]/60 transition-all flex items-center gap-3">
-                  <span class="text-xl">🏢</span>
-                  <div>
-                    <p class="font-bold text-sm text-[#202b25]">Boys Hostel</p>
-                    <p class="text-[11px] text-[#667168]">Campus Block</p>
-                  </div>
-                </div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="hostelOption" value="Girls Hostel" onchange="updateComputedAddress()" class="peer sr-only" />
-                <div class="p-3.5 rounded-xl border-2 border-[#e9ece6] peer-checked:border-[#245c43] peer-checked:bg-[#eaf3ec]/60 transition-all flex items-center gap-3">
-                  <span class="text-xl">🏫</span>
-                  <div>
-                    <p class="font-bold text-sm text-[#202b25]">Girls Hostel</p>
-                    <p class="text-[11px] text-[#667168]">Campus Block</p>
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
+          <div><label class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-2">Hostel (Select One) *</label><div class="grid grid-cols-2 gap-3"><label class="cursor-pointer"><input type="radio" name="hostelOption" value="Boys Hostel" checked onchange="updateComputedAddress()" class="peer sr-only"/><div class="p-3.5 rounded-xl border-2 border-[#e9ece6] peer-checked:border-[#245c43] peer-checked:bg-[#eaf3ec]/60 flex items-center gap-3"><span class="text-xl">🏢</span><div><p class="font-bold text-sm text-[#202b25]">Boys Hostel</p><p class="text-[11px] text-[#667168]">Campus Block</p></div></div></label><label class="cursor-pointer"><input type="radio" name="hostelOption" value="Girls Hostel" onchange="updateComputedAddress()" class="peer sr-only"/><div class="p-3.5 rounded-xl border-2 border-[#e9ece6] peer-checked:border-[#245c43] peer-checked:bg-[#eaf3ec]/60 flex items-center gap-3"><span class="text-xl">🏫</span><div><p class="font-bold text-sm text-[#202b25]">Girls Hostel</p><p class="text-[11px] text-[#667168]">Campus Block</p></div></div></label></div></div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label for="chkRoomNo" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Room No. *</label>
-              <input
-                id="chkRoomNo"
-                type="text"
-                required
-                placeholder="e.g. 204"
-                oninput="updateComputedAddress()"
-                class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-              />
-            </div>
-
-            <div>
-              <label for="chkPhone" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Phone No. (10 Digits) *</label>
-              <input
-                id="chkPhone"
-                type="tel"
-                required
-                maxlength="10"
-                placeholder="e.g. 9876543210"
-                class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] focus:ring-2 focus:ring-[#245c43]/15 outline-none text-sm"
-              />
-            </div>
+            <div><label for="chkRoomNo" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Room No. *</label><input id="chkRoomNo" type="text" required placeholder="e.g. 204" oninput="updateComputedAddress()" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
+            <div><label for="chkPhone" class="block text-xs font-bold uppercase tracking-wider text-[#526056] mb-1.5">Phone No. (10 Digits) *</label><input id="chkPhone" type="tel" required maxlength="10" placeholder="e.g. 9876543210" class="w-full px-4 py-2.5 rounded-lg border border-[#e9ece6] focus:border-[#245c43] outline-none text-sm"/></div>
           </div>
-
-          <div class="rounded-xl bg-[#eaf3ec] border border-[#cde2d1] p-3.5 flex items-start gap-3">
-            <span class="text-lg">📍</span>
-            <div>
-              <p class="text-[11px] font-bold uppercase tracking-wider text-[#245c43]">Campus Delivery Address</p>
-              <p id="computedAddressText" class="text-sm font-bold text-[#202b25] mt-0.5">Boys Hostel, Room No. ___, College Campus</p>
-            </div>
-          </div>
-
-          <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all">
-            Continue to Payment →
-          </button>
+          <div class="rounded-xl bg-[#eaf3ec] border border-[#cde2d1] p-3.5 flex items-start gap-3"><span class="text-lg">📍</span><div><p class="text-[11px] font-bold uppercase tracking-wider text-[#245c43]">Campus Delivery Address</p><p id="computedAddressText" class="text-sm font-bold text-[#202b25] mt-0.5">Boys Hostel, Room No. ___, College Campus</p></div></div>
+          <button type="submit" class="w-full py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Continue to Payment →</button>
         </form>
 
-        <!-- ===== STEP 2: PAYMENT METHOD SELECTION ===== -->
         <div id="checkoutStep2" class="hidden space-y-5">
-          <div class="flex items-center justify-between rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-[#667168]">Delivering To</p>
-              <p id="step2AddressSummary" class="text-sm font-bold text-[#202b25] mt-0.5"></p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs font-bold uppercase tracking-wider text-[#667168]">Amount</p>
-              <p id="step2TotalAmount" class="text-xl font-extrabold text-[#245c43]"></p>
-            </div>
-          </div>
-
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-[#526056] mb-2.5">Choose Payment Mode</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                id="payBtnUPI"
-                onclick="selectPaymentMethod('UPI')"
-                class="p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3.5"
-              >
-                <div class="w-11 h-11 rounded-lg bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-xl shrink-0">📱</div>
-                <div>
-                  <p class="font-extrabold text-sm text-[#202b25]">UPI Payment</p>
-                  <p class="text-xs text-[#667168]">Scan QR via GPay / PhonePe / Paytm</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                id="payBtnCOD"
-                onclick="selectPaymentMethod('Cash on Delivery')"
-                class="p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3.5"
-              >
-                <div class="w-11 h-11 rounded-lg bg-[#fff3e6] text-[#9b6220] flex items-center justify-center text-xl shrink-0">💵</div>
-                <div>
-                  <p class="font-extrabold text-sm text-[#202b25]">Cash on Delivery</p>
-                  <p class="text-xs text-[#667168]">Pay cash at your Hostel Room</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <!-- UPI QR Panel -->
+          <div class="flex items-center justify-between rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-4"><div><p class="text-xs font-bold uppercase tracking-wider text-[#667168]">Delivering To</p><p id="step2AddressSummary" class="text-sm font-bold text-[#202b25] mt-0.5"></p></div><div class="text-right"><p class="text-xs font-bold uppercase tracking-wider text-[#667168]">Amount</p><p id="step2TotalAmount" class="text-xl font-extrabold text-[#245c43]"></p></div></div>
+          <div><p class="text-xs font-bold uppercase tracking-wider text-[#526056] mb-2.5">Choose Payment Mode</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button type="button" id="payBtnUPI" onclick="selectPaymentMethod('UPI')" class="p-4 rounded-xl border-2 text-left flex items-center gap-3.5"><div class="w-11 h-11 rounded-lg bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-xl shrink-0">📱</div><div><p class="font-extrabold text-sm text-[#202b25]">UPI Payment</p><p class="text-xs text-[#667168]">Scan QR via GPay / PhonePe / Paytm</p></div></button><button type="button" id="payBtnCOD" onclick="selectPaymentMethod('Cash on Delivery')" class="p-4 rounded-xl border-2 text-left flex items-center gap-3.5"><div class="w-11 h-11 rounded-lg bg-[#fff3e6] text-[#9b6220] flex items-center justify-center text-xl shrink-0">💵</div><div><p class="font-extrabold text-sm text-[#202b25]">Cash on Delivery</p><p class="text-xs text-[#667168]">Pay cash at your Hostel Room</p></div></button></div></div>
           <div id="upiQrPanel" class="rounded-2xl border-2 border-[#d7e8d9] bg-gradient-to-b from-[#eaf3ec]/50 to-white p-5 text-center space-y-4">
-            <div>
-              <span class="inline-block px-3 py-1 rounded-full bg-[#eaf3ec] text-[#245c43] text-xs font-extrabold uppercase tracking-wider">Instant UPI QR</span>
-              <h4 id="upiScanHeadline" class="text-lg font-extrabold text-[#202b25] mt-2">Scan &amp; Pay ₹0 via any UPI App</h4>
-            </div>
-
-            <div class="inline-flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-[#e9ece6]">
-              <div id="upiQrContainer" class="w-48 h-48 flex items-center justify-center"></div>
-              <div class="mt-3 flex items-center gap-2 bg-[#f5f6f2] px-3 py-1.5 rounded-lg">
-                <span class="text-xs font-mono font-bold text-[#202b25]">royalscanteen@upi</span>
-                <button type="button" onclick="copyUpiId()" class="text-[11px] font-bold text-[#245c43] hover:underline">Copy</button>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold text-[#526056]">
-              <span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">Google Pay</span>
-              <span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">PhonePe</span>
-              <span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">Paytm</span>
-              <span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">BHIM UPI</span>
-            </div>
-
-            <p class="text-xs text-[#526056]">
-              After completing the UPI payment on your phone, click <strong>"Get Receipt"</strong> below.
-            </p>
+            <div><span class="inline-block px-3 py-1 rounded-full bg-[#eaf3ec] text-[#245c43] text-xs font-extrabold uppercase tracking-wider">Instant UPI QR</span><h4 id="upiScanHeadline" class="text-lg font-extrabold text-[#202b25] mt-2">Scan &amp; Pay ₹0 via any UPI App</h4></div>
+            <div class="inline-flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-[#e9ece6]"><div id="upiQrContainer" class="w-48 h-48 flex items-center justify-center"></div><div class="mt-3 flex items-center gap-2 bg-[#f5f6f2] px-3 py-1.5 rounded-lg"><span class="text-xs font-mono font-bold text-[#202b25]">royalscanteen@upi</span><button type="button" onclick="copyUpiId()" class="text-[11px] font-bold text-[#245c43] hover:underline">Copy</button></div></div>
+            <div class="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold text-[#526056]"><span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">Google Pay</span><span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">PhonePe</span><span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">Paytm</span><span class="px-2.5 py-1 rounded-lg bg-white border border-[#e9ece6]">BHIM UPI</span></div>
+            <p class="text-xs text-[#526056]">After completing the UPI payment on your phone, click <strong>"Get Receipt"</strong> below.</p>
           </div>
-
-          <!-- Cash on Delivery Panel -->
-          <div id="codPanel" class="hidden rounded-2xl border-2 border-[#d7e8d9] bg-[#f8faf6] p-5 space-y-3 text-center">
-            <div class="w-14 h-14 mx-auto rounded-xl bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-2xl">🤝</div>
-            <h4 class="text-lg font-extrabold text-[#202b25]">Cash on Delivery Selected</h4>
-            <p class="text-sm text-[#526056] max-w-md mx-auto">
-              Keep <strong id="codAmountText" class="text-[#202b25]">₹0</strong> ready to pay our campus delivery student at your hostel room door.
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3 pt-1">
-            <button
-              type="button"
-              onclick="backToDetailsStep()"
-              class="px-5 py-3 rounded-lg border border-[#e9ece6] bg-white hover:bg-[#f5f6f2] text-[#526056] font-bold text-sm transition-colors"
-            >
-              ← Back
-            </button>
-            <button
-              type="button"
-              id="getReceiptBtn"
-              onclick="generateReceiptStep()"
-              class="flex-1 py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all"
-            >
-              Payment Completed — Get Receipt
-            </button>
-          </div>
+          <div id="codPanel" class="hidden rounded-2xl border-2 border-[#d7e8d9] bg-[#f8faf6] p-5 space-y-3 text-center"><div class="w-14 h-14 mx-auto rounded-xl bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-2xl">🤝</div><h4 class="text-lg font-extrabold text-[#202b25]">Cash on Delivery Selected</h4><p class="text-sm text-[#526056] max-w-md mx-auto">Keep <strong id="codAmountText" class="text-[#202b25]">₹0</strong> ready to pay our campus delivery student at your hostel room door.</p></div>
+          <div class="flex items-center gap-3 pt-1"><button type="button" onclick="backToDetailsStep()" class="px-5 py-3 rounded-lg border border-[#e9ece6] bg-white hover:bg-[#f5f6f2] text-[#526056] font-bold text-sm">← Back</button><button type="button" id="getReceiptBtn" onclick="generateReceiptStep()" class="flex-1 py-3 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">Payment Completed — Get Receipt</button></div>
         </div>
 
-        <!-- ===== STEP 3: FORMAL RECEIPT, DOWNLOAD PDF & CONFIRM ORDER ===== -->
         <div id="checkoutStep3" class="hidden space-y-5">
           <div id="printableReceiptCard" class="rounded-2xl border-2 border-dashed border-[#c7d4c9] bg-white p-5 sm:p-6 space-y-5 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-[#e9ece6]">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xl font-extrabold text-[#202b25] font-display">canteen<span class="text-[#245c43]">ROYAL</span></span>
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#194733] text-white">Official Receipt</span>
-                </div>
-                <p class="text-xs text-[#667168] mt-1">Royal's Canteen • Express Hostel Delivery</p>
-              </div>
-              <div class="text-left sm:text-right text-xs">
-                <p class="font-extrabold text-[#202b25]" id="recOrderId">Order #RC-0000</p>
-                <p class="text-[#667168] mt-0.5" id="recDateTime"></p>
-                <span id="recPaymentBadge" class="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
-              </div>
+              <div><div class="flex items-center gap-2"><span class="text-xl font-extrabold text-[#202b25] font-display">canteen<span class="text-[#245c43]">ROYAL</span></span><span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#194733] text-white">Official Receipt</span></div><p class="text-xs text-[#667168] mt-1">Royal's Canteen • Express Hostel Delivery</p></div>
+              <div class="text-left sm:text-right text-xs"><p class="font-extrabold text-[#202b25]" id="recOrderId">Order #RC-0000</p><p class="text-[#667168] mt-0.5" id="recDateTime"></p><span id="recPaymentBadge" class="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span></div>
             </div>
-
             <div class="rounded-xl bg-[#f8faf6] border border-[#e9ece6] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <span class="text-[#667168] font-semibold">Student Name:</span>
-                <p id="recStudentName" class="font-bold text-[#202b25] text-sm"></p>
-              </div>
-              <div>
-                <span class="text-[#667168] font-semibold">College Registration No.:</span>
-                <p id="recRegNo" class="font-bold text-[#202b25] text-sm"></p>
-              </div>
-              <div>
-                <span class="text-[#667168] font-semibold">Hostel &amp; Room No.:</span>
-                <p id="recHostelRoom" class="font-bold text-[#202b25] text-sm"></p>
-              </div>
-              <div>
-                <span class="text-[#667168] font-semibold">Phone No.:</span>
-                <p id="recPhone" class="font-bold text-[#202b25] text-sm"></p>
-              </div>
-              <div class="sm:col-span-2 pt-2 border-t border-[#e9ece6]">
-                <span class="text-[#667168] font-semibold">Delivery Address:</span>
-                <p id="recFullAddress" class="font-bold text-[#202b25] text-sm mt-0.5"></p>
-              </div>
+              <div><span class="text-[#667168] font-semibold">Student Name:</span><p id="recStudentName" class="font-bold text-[#202b25] text-sm"></p></div>
+              <div><span class="text-[#667168] font-semibold">College Registration No.:</span><p id="recRegNo" class="font-bold text-[#202b25] text-sm"></p></div>
+              <div><span class="text-[#667168] font-semibold">Hostel &amp; Room No.:</span><p id="recHostelRoom" class="font-bold text-[#202b25] text-sm"></p></div>
+              <div><span class="text-[#667168] font-semibold">Phone No.:</span><p id="recPhone" class="font-bold text-[#202b25] text-sm"></p></div>
+              <div class="sm:col-span-2 pt-2 border-t border-[#e9ece6]"><span class="text-[#667168] font-semibold">Delivery Address:</span><p id="recFullAddress" class="font-bold text-[#202b25] text-sm mt-0.5"></p></div>
             </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs sm:text-sm">
-                <thead>
-                  <tr class="border-b border-[#e9ece6] text-[11px] uppercase tracking-wider text-[#667168]">
-                    <th class="pb-2 font-bold">Item</th>
-                    <th class="pb-2 font-bold text-center">Qty</th>
-                    <th class="pb-2 font-bold text-right">Price</th>
-                    <th class="pb-2 font-bold text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody id="recItemsBody" class="divide-y divide-[#f0f1ee]"></tbody>
-              </table>
-            </div>
-
+            <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead><tr class="border-b border-[#e9ece6] text-[11px] uppercase tracking-wider text-[#667168]"><th class="pb-2 font-bold">Item</th><th class="pb-2 font-bold text-center">Qty</th><th class="pb-2 font-bold text-right">Price</th><th class="pb-2 font-bold text-right">Subtotal</th></tr></thead><tbody id="recItemsBody" class="divide-y divide-[#f0f1ee]"></tbody></table></div>
             <div class="pt-3 border-t border-[#e9ece6] space-y-1.5 text-sm">
-              <div class="flex justify-between text-[#526056]">
-                <span>Estimated Delivery Time</span>
-                <span id="recDeliveryTime" class="font-bold text-[#9b6220]"></span>
-              </div>
-              <div class="flex justify-between text-[#526056]">
-                <span>Campus Hostel Delivery Fee</span>
-                <span class="font-bold text-[#245c43]">FREE</span>
-              </div>
-              <div class="flex justify-between text-lg font-extrabold text-[#202b25] pt-2 border-t border-[#e9ece6]">
-                <span>Grand Total</span>
-                <span id="recGrandTotal" class="text-[#245c43]">₹0</span>
-              </div>
+              <div class="flex justify-between text-[#526056]"><span>Estimated Delivery Time</span><span id="recDeliveryTime" class="font-bold text-[#9b6220]"></span></div>
+              <div class="flex justify-between text-[#526056]"><span>Campus Hostel Delivery Fee</span><span class="font-bold text-[#245c43]">FREE</span></div>
+              <div class="flex justify-between text-lg font-extrabold text-[#202b25] pt-2 border-t border-[#e9ece6]"><span>Grand Total</span><span id="recGrandTotal" class="text-[#245c43]">₹0</span></div>
             </div>
           </div>
-
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onclick="downloadReceiptPDF(currentDraftOrder)"
-              class="py-3 px-4 rounded-lg border-2 border-[#202b25] text-[#202b25] bg-white hover:bg-[#202b25] hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" />
-              </svg>
-              <span>Download Receipt PDF</span>
-            </button>
-
-            <button
-              type="button"
-              onclick="confirmFinalOrder()"
-              class="py-3 px-4 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2"
-            >
-              <span>✓</span>
-              <span>Confirm Order</span>
-            </button>
+            <button type="button" onclick="downloadReceiptPDF(currentDraftOrder)" class="py-3 px-4 rounded-lg border-2 border-[#202b25] text-[#202b25] bg-white hover:bg-[#202b25] hover:text-white font-bold text-sm flex items-center justify-center gap-2">⬇ Download Receipt PDF</button>
+            <button type="button" onclick="confirmFinalOrder()" class="py-3 px-4 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2">✓ Confirm Order</button>
           </div>
         </div>
 
-        <!-- ===== STEP 4: ORDER CONFIRMED SUCCESS SCREEN ===== -->
         <div id="checkoutStep4" class="hidden py-6 text-center space-y-5">
-          <div class="w-20 h-20 mx-auto rounded-full bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-4xl shadow-inner">
-            ✓
-          </div>
-          <div class="space-y-1.5">
-            <span class="inline-block px-3 py-1 rounded-full bg-[#eaf3ec] text-[#245c43] text-xs font-extrabold uppercase tracking-wider">Order Confirmed</span>
-            <h3 class="text-2xl font-extrabold text-[#202b25]">Your Food is Being Prepared!</h3>
-            <p id="confirmedSummaryText" class="text-sm text-[#526056] max-w-md mx-auto"></p>
-          </div>
-
-          <div class="max-w-md mx-auto rounded-xl bg-[#fff7ec] border border-[#f2dec0] p-4 text-left flex items-center gap-3.5">
-            <span class="text-2xl">🔔</span>
-            <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-[#9b6220]">Live Campus Delivery Status</p>
-              <p id="confirmedDeliveryETA" class="text-sm font-extrabold text-[#202b25] mt-0.5"></p>
-              <p class="text-[11px] text-[#667168] mt-1">Watch the bell icon at the top for Ready &amp; Delivery alerts!</p>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onclick="downloadReceiptPDF(lastConfirmedOrder)"
-              class="px-5 py-2.5 rounded-lg border-2 border-[#202b25] text-[#202b25] hover:bg-[#202b25] hover:text-white font-bold text-sm transition-all"
-            >
-              Download Receipt PDF
-            </button>
-            <button
-              type="button"
-              onclick="closeCheckoutModal(); handleOpenOrders();"
-              class="px-5 py-2.5 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm transition-all"
-            >
-              View My Orders
-            </button>
-          </div>
+          <div class="w-20 h-20 mx-auto rounded-full bg-[#eaf3ec] text-[#245c43] flex items-center justify-center text-4xl shadow-inner">✓</div>
+          <div class="space-y-1.5"><span class="inline-block px-3 py-1 rounded-full bg-[#eaf3ec] text-[#245c43] text-xs font-extrabold uppercase tracking-wider">Order Confirmed</span><h3 class="text-2xl font-extrabold text-[#202b25]">Your Food is Being Prepared!</h3><p id="confirmedSummaryText" class="text-sm text-[#526056] max-w-md mx-auto"></p></div>
+          <div class="max-w-md mx-auto rounded-xl bg-[#fff7ec] border border-[#f2dec0] p-4 text-left flex items-center gap-3.5"><span class="text-2xl">🔔</span><div><p class="text-xs font-bold uppercase tracking-wider text-[#9b6220]">Live Campus Delivery Status</p><p id="confirmedDeliveryETA" class="text-sm font-extrabold text-[#202b25] mt-0.5"></p><p class="text-[11px] text-[#667168] mt-1">Watch the bell icon at the top for Ready &amp; Delivery alerts!</p></div></div>
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2"><button type="button" onclick="downloadReceiptPDF(lastConfirmedOrder)" class="px-5 py-2.5 rounded-lg border-2 border-[#202b25] text-[#202b25] hover:bg-[#202b25] hover:text-white font-bold text-sm">Download Receipt PDF</button><button type="button" onclick="closeCheckoutModal(); handleOpenOrders();" class="px-5 py-2.5 rounded-lg bg-[#245c43] hover:bg-[#194733] text-white font-bold text-sm shadow-sm">View My Orders</button></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MY ORDERS HISTORY MODAL ==================== -->
+  <!-- MY ORDERS MODAL -->
   <div id="ordersModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-[#19261d]/65 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col border border-[#e9ece6]">
-      <div class="px-6 py-5 border-b border-[#e9ece6] flex items-center justify-between shrink-0">
-        <div>
-          <h3 class="text-xl font-extrabold text-[#202b25]">My Campus Orders</h3>
-          <p id="ordersStudentSub" class="text-xs text-[#667168] mt-0.5">Your confirmed canteen orders &amp; downloadable receipts</p>
-        </div>
-        <button onclick="closeOrdersModal()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold" aria-label="Close orders">
-          ✕
-        </button>
-      </div>
-
+      <div class="px-6 py-5 border-b border-[#e9ece6] flex items-center justify-between shrink-0"><div><h3 class="text-xl font-extrabold text-[#202b25]">My Campus Orders</h3><p id="ordersStudentSub" class="text-xs text-[#667168] mt-0.5">Your confirmed canteen orders &amp; downloadable receipts</p></div><button onclick="closeOrdersModal()" class="w-9 h-9 rounded-lg bg-[#f5f6f2] hover:bg-[#e9ece6] flex items-center justify-center text-[#202b25] font-bold" aria-label="Close orders">✕</button></div>
       <div id="ordersListContainer" class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4"></div>
     </div>
   </div>
 
-  <!-- ==================== ACCESSIBLE TOAST REGION & SCREEN READER ANNOUNCEMENTS ==================== -->
   <p class="sr-only-live">Screen reader announcements</p>
   <div id="srLiveRegion" class="sr-only-live" aria-live="polite"></div>
   <div id="toastContainer" class="toast-region" role="region" aria-label="Notifications"></div>
-
-  <!-- ==================== APPLICATION JAVASCRIPT ==================== -->
   <script src="user-app.js"></script>
 </body>
 </html>

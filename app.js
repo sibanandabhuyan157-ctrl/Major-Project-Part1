@@ -1,1315 +1,419 @@
 const STORAGE_KEY = "canteenos-data-v1";
-const PAGE_TITLES = {
-  overview: "Overview",
-  orders: "Orders",
-  notifications: "Notifications",
-  menu: "Menu",
-  inventory: "Inventory",
-  reports: "Sales & reports"
-};
+const PAGE_TITLES = { overview: "Overview", orders: "Orders", notifications: "Notifications", menu: "Menu", inventory: "Inventory", reports: "Sales & reports" };
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+
 const seedData = {
   menu: [
-    { id: "m1", name: "Masala Dosa", category: "Breakfast", price: 65, costPerServing: 24, emoji: "🥞", description: "Crispy dosa with potato masala" },
-    { id: "m2", name: "Veg Thali", category: "Meals", price: 120, costPerServing: 55, emoji: "🍛", description: "Today's wholesome lunch special" },
-    { id: "m3", name: "Paneer Roll", category: "Snacks", price: 85, costPerServing: 34, emoji: "🌯", description: "Spiced paneer wrapped fresh" },
-    { id: "m4", name: "Filter Coffee", category: "Drinks", price: 30, costPerServing: 10, emoji: "☕", description: "South Indian filter coffee" },
-    { id: "m5", name: "Samosa (2 pcs)", category: "Snacks", price: 35, costPerServing: 18, emoji: "🥟", description: "Golden, flaky and satisfying" },
-    { id: "m6", name: "Fresh Lime Soda", category: "Drinks", price: 40, costPerServing: 12, emoji: "🍋", description: "Fresh lime, sweet or salted" },
-    { id: "m7", name: "Idli Sambar", category: "Breakfast", price: 45, costPerServing: 16, emoji: "🥣", description: "Soft idlis with warm sambar" },
-    { id: "m8", name: "Aloo Paratha", category: "Breakfast", price: 55, costPerServing: 23, emoji: "🫓", description: "Stuffed paratha served with curd" },
-    { id: "m9", name: "Chole Bhature", category: "Meals", price: 110, costPerServing: 48, emoji: "🍲", description: "Spiced chickpeas with fluffy bhature" },
-    { id: "m10", name: "Veg Pulao", category: "Meals", price: 95, costPerServing: 39, emoji: "🍚", description: "Fragrant rice with seasonal vegetables" },
-    { id: "m11", name: "Masala Chai", category: "Drinks", price: 20, costPerServing: 7, emoji: "🫖", description: "Freshly brewed spiced tea" },
-    { id: "m12", name: "Gulab Jamun (2 pcs)", category: "Desserts", price: 45, costPerServing: 18, emoji: "🍡", description: "Warm syrup-soaked Indian sweets" },
-    { id: "m13", name: "Veg Sandwich", category: "Snacks", price: 65, costPerServing: 28, emoji: "🥪", description: "Toasted sandwich with fresh vegetables" },
-    { id: "m14", name: "Cheese Corn Sandwich", category: "Snacks", price: 85, costPerServing: 39, emoji: "🥪", description: "Grilled sandwich with cheese and corn" },
-    { id: "m15", name: "Veg Burger", category: "Snacks", price: 90, costPerServing: 42, emoji: "🍔", description: "Crispy vegetable patty with salad" },
-    { id: "m16", name: "French Fries", category: "Snacks", price: 70, costPerServing: 30, emoji: "🍟", description: "Crispy salted potato fries" },
-    { id: "m17", name: "Pav Bhaji", category: "Meals", price: 100, costPerServing: 44, emoji: "🍛", description: "Spiced vegetable mash with buttered pav" },
-    { id: "m18", name: "Vada Pav", category: "Snacks", price: 35, costPerServing: 14, emoji: "🍔", description: "Mumbai-style potato fritter bun" },
-    { id: "m19", name: "Poha", category: "Breakfast", price: 40, costPerServing: 14, emoji: "🥣", description: "Light flattened rice with peanuts" },
-    { id: "m20", name: "Upma", category: "Breakfast", price: 40, costPerServing: 15, emoji: "🥣", description: "Savory semolina with vegetables" },
-    { id: "m21", name: "Plain Dosa", category: "Breakfast", price: 55, costPerServing: 20, emoji: "🥞", description: "Crispy dosa served with chutney" },
-    { id: "m22", name: "Rava Dosa", category: "Breakfast", price: 75, costPerServing: 29, emoji: "🥞", description: "Crispy semolina dosa with spices" },
-    { id: "m23", name: "Onion Uttapam", category: "Breakfast", price: 75, costPerServing: 28, emoji: "🥞", description: "Soft rice pancake topped with onion" },
-    { id: "m24", name: "Paneer Paratha", category: "Breakfast", price: 75, costPerServing: 34, emoji: "🫓", description: "Stuffed paratha with spiced paneer" },
-    { id: "m25", name: "Rajma Chawal", category: "Meals", price: 100, costPerServing: 45, emoji: "🍛", description: "Kidney bean curry with steamed rice" },
-    { id: "m26", name: "Dal Tadka Rice", category: "Meals", price: 85, costPerServing: 36, emoji: "🍚", description: "Yellow lentils with rice and tadka" },
-    { id: "m27", name: "Kadai Paneer", category: "Meals", price: 130, costPerServing: 62, emoji: "🍲", description: "Paneer and peppers in spiced gravy" },
-    { id: "m28", name: "Jeera Rice", category: "Meals", price: 80, costPerServing: 32, emoji: "🍚", description: "Basmati rice tempered with cumin" },
-    { id: "m29", name: "Veg Biryani", category: "Meals", price: 120, costPerServing: 52, emoji: "🍛", description: "Fragrant rice layered with vegetables" },
-    { id: "m30", name: "Curd Rice", category: "Meals", price: 75, costPerServing: 30, emoji: "🍚", description: "Cooling rice mixed with seasoned curd" },
-    { id: "m31", name: "Lemon Rice", category: "Meals", price: 75, costPerServing: 28, emoji: "🍋", description: "Tangy rice with lemon and peanuts" },
-    { id: "m32", name: "Hakka Noodles", category: "Meals", price: 100, costPerServing: 42, emoji: "🍜", description: "Wok-tossed noodles with vegetables" },
-    { id: "m33", name: "Veg Manchurian", category: "Meals", price: 110, costPerServing: 50, emoji: "🥘", description: "Vegetable dumplings in tangy sauce" },
-    { id: "m34", name: "Chilli Paneer", category: "Meals", price: 130, costPerServing: 62, emoji: "🥘", description: "Paneer tossed with peppers and chilli" },
-    { id: "m35", name: "Spring Rolls", category: "Snacks", price: 80, costPerServing: 35, emoji: "🌯", description: "Crispy rolls filled with vegetables" },
-    { id: "m36", name: "Bread Pakora", category: "Snacks", price: 40, costPerServing: 18, emoji: "🍞", description: "Bread fritter coated in spiced batter" },
-    { id: "m37", name: "Onion Pakora", category: "Snacks", price: 45, costPerServing: 19, emoji: "🧅", description: "Crispy onion fritters with herbs" },
-    { id: "m38", name: "Dhokla", category: "Snacks", price: 50, costPerServing: 21, emoji: "🧁", description: "Soft steamed Gujarati savoury cake" },
-    { id: "m39", name: "Kachori (2 pcs)", category: "Snacks", price: 40, costPerServing: 17, emoji: "🥟", description: "Crispy pastry with spiced filling" },
-    { id: "m40", name: "Corn Chaat", category: "Snacks", price: 65, costPerServing: 26, emoji: "🌽", description: "Sweet corn tossed with lime and spices" },
-    { id: "m41", name: "Fresh Fruit Bowl", category: "Snacks", price: 70, costPerServing: 30, emoji: "🍉", description: "Seasonal fresh-cut fruit" },
-    { id: "m42", name: "Mango Lassi", category: "Drinks", price: 55, costPerServing: 24, emoji: "🥭", description: "Yogurt blended with ripe mango" },
-    { id: "m43", name: "Sweet Lassi", category: "Drinks", price: 45, costPerServing: 18, emoji: "🥛", description: "Chilled, lightly sweetened yogurt drink" },
-    { id: "m44", name: "Salted Buttermilk", category: "Drinks", price: 25, costPerServing: 8, emoji: "🥛", description: "Cooling buttermilk with roasted cumin" },
-    { id: "m45", name: "Hot Chocolate", category: "Drinks", price: 65, costPerServing: 25, emoji: "☕", description: "Rich hot chocolate made fresh" },
-    { id: "m46", name: "Lemon Tea", category: "Drinks", price: 25, costPerServing: 8, emoji: "🍵", description: "Light tea with fresh lemon" },
-    { id: "m47", name: "Badam Milk", category: "Drinks", price: 50, costPerServing: 22, emoji: "🥛", description: "Warm milk flavored with almond" },
-    { id: "m48", name: "Chocolate Brownie", category: "Desserts", price: 60, costPerServing: 25, emoji: "🍫", description: "Fudgy chocolate brownie" },
-    { id: "m49", name: "Ice Cream Cup", category: "Desserts", price: 40, costPerServing: 17, emoji: "🍨", description: "Chilled scoop of creamy ice cream" },
-    { id: "m50", name: "Vanilla Milkshake", category: "Drinks", price: 60, costPerServing: 25, emoji: "🥤", description: "Cold, creamy vanilla milkshake" },
-    { id: "m51", name: "Chicken Biryani", category: "Non-Veg", price: 170, costPerServing: 85, emoji: "🍗", description: "Aromatic rice cooked with spiced chicken" },
-    { id: "m52", name: "Chicken Fried Rice", category: "Non-Veg", price: 140, costPerServing: 65, emoji: "🍚", description: "Wok-fried rice with chicken and vegetables" },
-    { id: "m53", name: "Chicken Hakka Noodles", category: "Non-Veg", price: 150, costPerServing: 68, emoji: "🍜", description: "Stir-fried noodles with chicken" },
-    { id: "m54", name: "Chicken Curry", category: "Non-Veg", price: 160, costPerServing: 78, emoji: "🍛", description: "Chicken simmered in a rich spiced gravy" },
-    { id: "m55", name: "Butter Chicken", category: "Non-Veg", price: 190, costPerServing: 95, emoji: "🍲", description: "Chicken in a creamy tomato gravy" },
-    { id: "m56", name: "Chicken Tikka", category: "Non-Veg", price: 160, costPerServing: 76, emoji: "🍗", description: "Yogurt-marinated chicken grilled with spices" },
-    { id: "m57", name: "Tandoori Chicken", category: "Non-Veg", price: 210, costPerServing: 110, emoji: "🍗", description: "Tandoor-style chicken with smoky spices" },
-    { id: "m58", name: "Chicken 65", category: "Non-Veg", price: 150, costPerServing: 70, emoji: "🍗", description: "Crispy, spiced South Indian chicken bites" },
-    { id: "m59", name: "Chilli Chicken", category: "Non-Veg", price: 155, costPerServing: 72, emoji: "🍗", description: "Chicken tossed in a tangy chilli sauce" },
-    { id: "m60", name: "Chicken Manchurian", category: "Non-Veg", price: 160, costPerServing: 75, emoji: "🥘", description: "Chicken bites in savory Manchurian sauce" },
-    { id: "m61", name: "Chicken Kathi Roll", category: "Non-Veg", price: 110, costPerServing: 49, emoji: "🌯", description: "Spiced chicken wrapped in a flaky roll" },
-    { id: "m62", name: "Chicken Sandwich", category: "Non-Veg", price: 95, costPerServing: 43, emoji: "🥪", description: "Toasted sandwich filled with seasoned chicken" },
-    { id: "m63", name: "Chicken Burger", category: "Non-Veg", price: 120, costPerServing: 55, emoji: "🍔", description: "Chicken patty served in a soft bun" },
-    { id: "m64", name: "Chicken Shawarma Roll", category: "Non-Veg", price: 130, costPerServing: 60, emoji: "🌯", description: "Spiced chicken with salad in a wrap" },
-    { id: "m65", name: "Chicken Momos (6 pcs)", category: "Non-Veg", price: 100, costPerServing: 45, emoji: "🥟", description: "Steamed chicken dumplings with chutney" },
-    { id: "m66", name: "Chicken Spring Rolls", category: "Non-Veg", price: 100, costPerServing: 46, emoji: "🌯", description: "Crispy rolls filled with seasoned chicken" },
-    { id: "m67", name: "Chicken Pakora", category: "Non-Veg", price: 110, costPerServing: 51, emoji: "🍗", description: "Chicken pieces fried in a spiced batter" },
-    { id: "m68", name: "Chicken Keema Pav", category: "Non-Veg", price: 125, costPerServing: 57, emoji: "🍞", description: "Spiced minced chicken served with pav" },
-    { id: "m69", name: "Egg Biryani", category: "Non-Veg", price: 125, costPerServing: 55, emoji: "🍚", description: "Fragrant biryani rice served with boiled eggs" },
-    { id: "m70", name: "Egg Fried Rice", category: "Non-Veg", price: 110, costPerServing: 47, emoji: "🍚", description: "Wok-fried rice with egg and vegetables" },
-    { id: "m71", name: "Egg Curry", category: "Non-Veg", price: 105, costPerServing: 46, emoji: "🍛", description: "Boiled eggs in a homestyle curry" },
-    { id: "m72", name: "Egg Bhurji Pav", category: "Non-Veg", price: 85, costPerServing: 35, emoji: "🍳", description: "Spiced scrambled eggs served with pav" },
-    { id: "m73", name: "Masala Omelette", category: "Non-Veg", price: 65, costPerServing: 26, emoji: "🍳", description: "Omelette with onion, chilli and herbs" },
-    { id: "m74", name: "Egg Sandwich", category: "Non-Veg", price: 75, costPerServing: 32, emoji: "🥪", description: "Toasted sandwich with seasoned egg" },
-    { id: "m75", name: "Egg Roll", category: "Non-Veg", price: 70, costPerServing: 28, emoji: "🌯", description: "Egg wrapped in a soft flatbread" },
-    { id: "m76", name: "Egg Noodles", category: "Non-Veg", price: 115, costPerServing: 49, emoji: "🍜", description: "Stir-fried noodles with egg and vegetables" },
-    { id: "m77", name: "Boiled Egg (2 pcs)", category: "Non-Veg", price: 35, costPerServing: 14, emoji: "🥚", description: "Two boiled eggs with seasoning" },
-    { id: "m78", name: "Fish Curry Rice", category: "Non-Veg", price: 175, costPerServing: 85, emoji: "🐟", description: "Fish curry served with steamed rice" },
-    { id: "m79", name: "Fish Fry", category: "Non-Veg", price: 160, costPerServing: 78, emoji: "🐟", description: "Crispy pan-fried fish with spices" },
-    { id: "m80", name: "Fish Biryani", category: "Non-Veg", price: 185, costPerServing: 90, emoji: "🐟", description: "Layered rice with spiced fish" },
-    { id: "m81", name: "Fish Fingers (5 pcs)", category: "Non-Veg", price: 140, costPerServing: 64, emoji: "🐟", description: "Golden crumb-coated fish fingers" },
-    { id: "m82", name: "Prawn Fried Rice", category: "Non-Veg", price: 180, costPerServing: 85, emoji: "🍤", description: "Fried rice tossed with seasoned prawns" },
-    { id: "m83", name: "Prawn Curry Rice", category: "Non-Veg", price: 195, costPerServing: 96, emoji: "🍤", description: "Prawns in a spiced curry with rice" },
-    { id: "m84", name: "Chilli Prawns", category: "Non-Veg", price: 190, costPerServing: 90, emoji: "🍤", description: "Prawns tossed with peppers and chilli" },
-    { id: "m85", name: "Prawn Biryani", category: "Non-Veg", price: 210, costPerServing: 102, emoji: "🍤", description: "Aromatic biryani layered with prawns" },
-    { id: "m86", name: "Mutton Biryani", category: "Non-Veg", price: 220, costPerServing: 112, emoji: "🍖", description: "Slow-cooked spiced mutton with rice" },
-    { id: "m87", name: "Mutton Curry Rice", category: "Non-Veg", price: 210, costPerServing: 108, emoji: "🍛", description: "Tender mutton curry served with rice" },
-    { id: "m88", name: "Mutton Keema Pav", category: "Non-Veg", price: 160, costPerServing: 78, emoji: "🍞", description: "Spiced minced mutton served with pav" },
-    { id: "m89", name: "Chicken Pulao", category: "Non-Veg", price: 155, costPerServing: 72, emoji: "🍚", description: "Fragrant one-pot rice with chicken" },
-    { id: "m90", name: "Chicken Kebab (4 pcs)", category: "Non-Veg", price: 145, costPerServing: 68, emoji: "🍢", description: "Juicy spiced chicken kebabs" },
-    { id: "m91", name: "Chicken Lollipop (4 pcs)", category: "Non-Veg", price: 160, costPerServing: 75, emoji: "🍗", description: "Crispy chicken lollipops with sauce" },
-    { id: "m92", name: "Chicken Seekh Kebab", category: "Non-Veg", price: 150, costPerServing: 70, emoji: "🍢", description: "Minced chicken kebabs grilled on skewers" },
-    { id: "m93", name: "Chicken Clear Soup", category: "Non-Veg", price: 75, costPerServing: 30, emoji: "🍲", description: "Light chicken soup with herbs" },
-    { id: "m94", name: "Chicken Caesar Sandwich", category: "Non-Veg", price: 125, costPerServing: 58, emoji: "🥪", description: "Chicken and crisp lettuce in toasted bread" },
-    { id: "m95", name: "Chicken Cheese Wrap", category: "Non-Veg", price: 135, costPerServing: 63, emoji: "🌯", description: "Grilled chicken and cheese in a wrap" },
-    { id: "m96", name: "Chicken Alfredo Pasta", category: "Non-Veg", price: 165, costPerServing: 78, emoji: "🍝", description: "Creamy pasta with chicken pieces" },
-    { id: "m97", name: "Chicken Tikka Masala", category: "Non-Veg", price: 185, costPerServing: 90, emoji: "🍛", description: "Grilled chicken in a spiced tomato gravy" },
-    { id: "m98", name: "Chicken Korma", category: "Non-Veg", price: 180, costPerServing: 88, emoji: "🍲", description: "Mild chicken curry with a creamy sauce" },
-    { id: "m99", name: "Fish Tikka (4 pcs)", category: "Non-Veg", price: 175, costPerServing: 84, emoji: "🐟", description: "Marinated fish grilled with spices" },
-    { id: "m100", name: "Egg Paratha", category: "Non-Veg", price: 75, costPerServing: 32, emoji: "🫓", description: "Flaky flatbread filled with egg" }
-  ],
+    ["m1","Masala Dosa","Breakfast",65,24,"🥞","Crispy dosa with potato masala"],["m2","Veg Thali","Meals",120,55,"🍛","Today's wholesome lunch special"],["m3","Paneer Roll","Snacks",85,34,"🌯","Spiced paneer wrapped fresh"],["m4","Filter Coffee","Drinks",30,10,"☕","South Indian filter coffee"],["m5","Samosa (2 pcs)","Snacks",35,18,"🥟","Golden, flaky and satisfying"],["m6","Fresh Lime Soda","Drinks",40,12,"🍋","Fresh lime, sweet or salted"],["m7","Idli Sambar","Breakfast",45,16,"🥣","Soft idlis with warm sambar"],["m8","Aloo Paratha","Breakfast",55,23,"🫓","Stuffed paratha served with curd"],["m9","Chole Bhature","Meals",110,48,"🍲","Spiced chickpeas with fluffy bhature"],["m10","Veg Pulao","Meals",95,39,"🍚","Fragrant rice with seasonal vegetables"],
+    ["m11","Masala Chai","Drinks",20,7,"🫖","Freshly brewed spiced tea"],["m12","Gulab Jamun (2 pcs)","Desserts",45,18,"🍡","Warm syrup-soaked Indian sweets"],["m13","Veg Sandwich","Snacks",65,28,"🥪","Toasted sandwich with fresh vegetables"],["m14","Cheese Corn Sandwich","Snacks",85,39,"🥪","Grilled sandwich with cheese and corn"],["m15","Veg Burger","Snacks",90,42,"🍔","Crispy vegetable patty with salad"],["m16","French Fries","Snacks",70,30,"🍟","Crispy salted potato fries"],["m17","Pav Bhaji","Meals",100,44,"🍛","Spiced vegetable mash with buttered pav"],["m18","Vada Pav","Snacks",35,14,"🍔","Mumbai-style potato fritter bun"],["m19","Poha","Breakfast",40,14,"🥣","Light flattened rice with peanuts"],["m20","Upma","Breakfast",40,15,"🥣","Savory semolina with vegetables"],
+    ["m21","Plain Dosa","Breakfast",55,20,"🥞","Crispy dosa served with chutney"],["m22","Rava Dosa","Breakfast",75,29,"🥞","Crispy semolina dosa with spices"],["m23","Onion Uttapam","Breakfast",75,28,"🥞","Soft rice pancake topped with onion"],["m24","Paneer Paratha","Breakfast",75,34,"🫓","Stuffed paratha with spiced paneer"],["m25","Rajma Chawal","Meals",100,45,"🍛","Kidney bean curry with steamed rice"],["m26","Dal Tadka Rice","Meals",85,36,"🍚","Yellow lentils with rice and tadka"],["m27","Kadai Paneer","Meals",130,62,"🍲","Paneer and peppers in spiced gravy"],["m28","Jeera Rice","Meals",80,32,"🍚","Basmati rice tempered with cumin"],["m29","Veg Biryani","Meals",120,52,"🍛","Fragrant rice layered with vegetables"],["m30","Curd Rice","Meals",75,30,"🍚","Cooling rice mixed with seasoned curd"],
+    ["m31","Lemon Rice","Meals",75,28,"🍋","Tangy rice with lemon and peanuts"],["m32","Hakka Noodles","Meals",100,42,"🍜","Wok-tossed noodles with vegetables"],["m33","Veg Manchurian","Meals",110,50,"🥘","Vegetable dumplings in tangy sauce"],["m34","Chilli Paneer","Meals",130,62,"🥘","Paneer tossed with peppers and chilli"],["m35","Spring Rolls","Snacks",80,35,"🌯","Crispy rolls filled with vegetables"],["m36","Bread Pakora","Snacks",40,18,"🍞","Bread fritter coated in spiced batter"],["m37","Onion Pakora","Snacks",45,19,"🧅","Crispy onion fritters with herbs"],["m38","Dhokla","Snacks",50,21,"🧁","Soft steamed Gujarati savoury cake"],["m39","Kachori (2 pcs)","Snacks",40,17,"🥟","Crispy pastry with spiced filling"],["m40","Corn Chaat","Snacks",65,26,"🌽","Sweet corn tossed with lime and spices"],
+    ["m41","Fresh Fruit Bowl","Snacks",70,30,"🍉","Seasonal fresh-cut fruit"],["m42","Mango Lassi","Drinks",55,24,"🥭","Yogurt blended with ripe mango"],["m43","Sweet Lassi","Drinks",45,18,"🥛","Chilled, lightly sweetened yogurt drink"],["m44","Salted Buttermilk","Drinks",25,8,"🥛","Cooling buttermilk with roasted cumin"],["m45","Hot Chocolate","Drinks",65,25,"☕","Rich hot chocolate made fresh"],["m46","Lemon Tea","Drinks",25,8,"🍵","Light tea with fresh lemon"],["m47","Badam Milk","Drinks",50,22,"🥛","Warm milk flavored with almond"],["m48","Chocolate Brownie","Desserts",60,25,"🍫","Fudgy chocolate brownie"],["m49","Ice Cream Cup","Desserts",40,17,"🍨","Chilled scoop of creamy ice cream"],["m50","Vanilla Milkshake","Drinks",60,25,"🥤","Cold, creamy vanilla milkshake"],
+    ["m51","Chicken Biryani","Non-Veg",170,85,"🍗","Aromatic rice cooked with spiced chicken"],["m52","Chicken Fried Rice","Non-Veg",140,65,"🍚","Wok-fried rice with chicken and vegetables"],["m53","Chicken Hakka Noodles","Non-Veg",150,68,"🍜","Stir-fried noodles with chicken"],["m54","Chicken Curry","Non-Veg",160,78,"🍛","Chicken simmered in a rich spiced gravy"],["m55","Butter Chicken","Non-Veg",190,95,"🍲","Chicken in a creamy tomato gravy"],["m56","Chicken Tikka","Non-Veg",160,76,"🍗","Yogurt-marinated chicken grilled with spices"],["m57","Tandoori Chicken","Non-Veg",210,110,"🍗","Tandoor-style chicken with smoky spices"],["m58","Chicken 65","Non-Veg",150,70,"🍗","Crispy, spiced South Indian chicken bites"],["m59","Chilli Chicken","Non-Veg",155,72,"🍗","Chicken tossed in a tangy chilli sauce"],["m60","Chicken Manchurian","Non-Veg",160,75,"🥘","Chicken bites in savory Manchurian sauce"],
+    ["m61","Chicken Kathi Roll","Non-Veg",110,49,"🌯","Spiced chicken wrapped in a flaky roll"],["m62","Chicken Sandwich","Non-Veg",95,43,"🥪","Toasted sandwich filled with seasoned chicken"],["m63","Chicken Burger","Non-Veg",120,55,"🍔","Chicken patty served in a soft bun"],["m64","Chicken Shawarma Roll","Non-Veg",130,60,"🌯","Spiced chicken with salad in a wrap"],["m65","Chicken Momos (6 pcs)","Non-Veg",100,45,"🥟","Steamed chicken dumplings with chutney"],["m66","Chicken Spring Rolls","Non-Veg",100,46,"🌯","Crispy rolls filled with seasoned chicken"],["m67","Chicken Pakora","Non-Veg",110,51,"🍗","Chicken pieces fried in a spiced batter"],["m68","Chicken Keema Pav","Non-Veg",125,57,"🍞","Spiced minced chicken served with pav"],["m69","Egg Biryani","Non-Veg",125,55,"🍚","Fragrant biryani rice served with boiled eggs"],["m70","Egg Fried Rice","Non-Veg",110,47,"🍚","Wok-fried rice with egg and vegetables"],
+    ["m71","Egg Curry","Non-Veg",105,46,"🍛","Boiled eggs in a homestyle curry"],["m72","Egg Bhurji Pav","Non-Veg",85,35,"🍳","Spiced scrambled eggs served with pav"],["m73","Masala Omelette","Non-Veg",65,26,"🍳","Omelette with onion, chilli and herbs"],["m74","Egg Sandwich","Non-Veg",75,32,"🥪","Toasted sandwich with seasoned egg"],["m75","Egg Roll","Non-Veg",70,28,"🌯","Egg wrapped in a soft flatbread"],["m76","Egg Noodles","Non-Veg",115,49,"🍜","Stir-fried noodles with egg and vegetables"],["m77","Boiled Egg (2 pcs)","Non-Veg",35,14,"🥚","Two boiled eggs with seasoning"],["m78","Fish Curry Rice","Non-Veg",175,85,"🐟","Fish curry served with steamed rice"],["m79","Fish Fry","Non-Veg",160,78,"🐟","Crispy pan-fried fish with spices"],["m80","Fish Biryani","Non-Veg",185,90,"🐟","Layered rice with spiced fish"],
+    ["m81","Fish Fingers (5 pcs)","Non-Veg",140,64,"🐟","Golden crumb-coated fish fingers"],["m82","Prawn Fried Rice","Non-Veg",180,85,"🍤","Fried rice tossed with seasoned prawns"],["m83","Prawn Curry Rice","Non-Veg",195,96,"🍤","Prawns in a spiced curry with rice"],["m84","Chilli Prawns","Non-Veg",190,90,"🍤","Prawns tossed with peppers and chilli"],["m85","Prawn Biryani","Non-Veg",210,102,"🍤","Aromatic biryani layered with prawns"],["m86","Mutton Biryani","Non-Veg",220,112,"🍖","Slow-cooked spiced mutton with rice"],["m87","Mutton Curry Rice","Non-Veg",210,108,"🍛","Tender mutton curry served with rice"],["m88","Mutton Keema Pav","Non-Veg",160,78,"🍞","Spiced minced mutton served with pav"],["m89","Chicken Pulao","Non-Veg",155,72,"🍚","Fragrant one-pot rice with chicken"],["m90","Chicken Kebab (4 pcs)","Non-Veg",145,68,"🍢","Juicy spiced chicken kebabs"],
+    ["m91","Chicken Lollipop (4 pcs)","Non-Veg",160,75,"🍗","Crispy chicken lollipops with sauce"],["m92","Chicken Seekh Kebab","Non-Veg",150,70,"🍢","Minced chicken kebabs grilled on skewers"],["m93","Chicken Clear Soup","Non-Veg",75,30,"🍲","Light chicken soup with herbs"],["m94","Chicken Caesar Sandwich","Non-Veg",125,58,"🥪","Chicken and crisp lettuce in toasted bread"],["m95","Chicken Cheese Wrap","Non-Veg",135,63,"🌯","Grilled chicken and cheese in a wrap"],["m96","Chicken Alfredo Pasta","Non-Veg",165,78,"🍝","Creamy pasta with chicken pieces"],["m97","Chicken Tikka Masala","Non-Veg",185,90,"🍛","Grilled chicken in a spiced tomato gravy"],["m98","Chicken Korma","Non-Veg",180,88,"🍲","Mild chicken curry with a creamy sauce"],["m99","Fish Tikka (4 pcs)","Non-Veg",175,84,"🐟","Marinated fish grilled with spices"],["m100","Egg Paratha","Non-Veg",75,32,"🫓","Flaky flatbread filled with egg"]
+  ].map(([id, name, category, price, costPerServing, emoji, description]) => ({ id, name, category, price, costPerServing, emoji, description })),
   orders: [
-    { id: "1042", customer: "Aarav Sharma", item: "Veg Thali", qty: 2, total: 240, unitCost: 55, status: "Preparing", time: "12:42 PM", payment: "UPI", day: todayKey() },
-    { id: "1041", customer: "Meera Patel", item: "Masala Dosa", qty: 1, total: 65, unitCost: 24, status: "Ready", time: "12:38 PM", payment: "Cash", day: todayKey() },
-    { id: "1040", customer: "Kabir Singh", item: "Paneer Roll", qty: 2, total: 170, unitCost: 34, status: "Preparing", time: "12:31 PM", payment: "UPI", day: todayKey() },
-    { id: "1039", customer: "Diya Nair", item: "Filter Coffee", qty: 1, total: 30, unitCost: 10, status: "Completed", time: "12:20 PM", payment: "Cash", day: todayKey() },
-    { id: "1038", customer: "Ishaan Rao", item: "Samosa (2 pcs)", qty: 2, total: 70, unitCost: 18, status: "Completed", time: "12:14 PM", payment: "UPI", day: todayKey() }
-  ],
+    ["1042","Aarav Sharma","Veg Thali",2,240,55,"Preparing","12:42 PM","UPI"],["1041","Meera Patel","Masala Dosa",1,65,24,"Ready","12:38 PM","Cash"],["1040","Kabir Singh","Paneer Roll",2,170,34,"Preparing","12:31 PM","UPI"],["1039","Diya Nair","Filter Coffee",1,30,10,"Completed","12:20 PM","Cash"],["1038","Ishaan Rao","Samosa (2 pcs)",2,70,18,"Completed","12:14 PM","UPI"]
+  ].map(([id, customer, item, qty, total, unitCost, status, time, payment]) => ({ id, customer, item, qty, total, unitCost, status, time, payment, day: todayKey() })),
   inventory: [
-    { id: "i1", name: "Rice", unit: "kg", stock: 18, minimum: 10, unitCost: 60, category: "Grains" },
-    { id: "i2", name: "Potatoes", unit: "kg", stock: 6, minimum: 8, unitCost: 30, category: "Produce" },
-    { id: "i3", name: "Paneer", unit: "kg", stock: 4, minimum: 3, unitCost: 360, category: "Dairy" },
-    { id: "i4", name: "Cooking oil", unit: "L", stock: 3, minimum: 5, unitCost: 150, category: "Essentials" },
-    { id: "i5", name: "Coffee powder", unit: "kg", stock: 2, minimum: 1, unitCost: 420, category: "Beverages" },
-    { id: "i6", name: "Wheat flour", unit: "kg", stock: 12, minimum: 4, unitCost: 40, category: "Grains" },
-    { id: "i7", name: "All-purpose flour", unit: "kg", stock: 8, minimum: 3, unitCost: 45, category: "Grains" },
-    { id: "i8", name: "Semolina", unit: "kg", stock: 5, minimum: 2, unitCost: 55, category: "Grains" },
-    { id: "i9", name: "Flattened rice", unit: "kg", stock: 5, minimum: 2, unitCost: 50, category: "Grains" },
-    { id: "i10", name: "Dosa batter", unit: "kg", stock: 6, minimum: 2, unitCost: 60, category: "Grains" },
-    { id: "i11", name: "Chickpea flour", unit: "kg", stock: 4, minimum: 2, unitCost: 90, category: "Grains" },
-    { id: "i12", name: "Bread", unit: "pack", stock: 8, minimum: 3, unitCost: 35, category: "Bakery" },
-    { id: "i13", name: "Pav buns", unit: "pack", stock: 6, minimum: 2, unitCost: 40, category: "Bakery" },
-    { id: "i14", name: "Milk", unit: "L", stock: 12, minimum: 4, unitCost: 60, category: "Dairy" },
-    { id: "i15", name: "Curd", unit: "kg", stock: 5, minimum: 2, unitCost: 90, category: "Dairy" },
-    { id: "i16", name: "Butter", unit: "kg", stock: 2, minimum: 1, unitCost: 480, category: "Dairy" },
-    { id: "i17", name: "Cheese", unit: "kg", stock: 3, minimum: 1, unitCost: 420, category: "Dairy" },
-    { id: "i18", name: "Coconut", unit: "pcs", stock: 12, minimum: 4, unitCost: 35, category: "Produce" },
-    { id: "i19", name: "Onions", unit: "kg", stock: 10, minimum: 4, unitCost: 35, category: "Produce" },
-    { id: "i20", name: "Tomatoes", unit: "kg", stock: 8, minimum: 3, unitCost: 40, category: "Produce" },
-    { id: "i21", name: "Ginger", unit: "kg", stock: 2, minimum: 1, unitCost: 120, category: "Produce" },
-    { id: "i22", name: "Garlic", unit: "kg", stock: 2, minimum: 1, unitCost: 160, category: "Produce" },
-    { id: "i23", name: "Green chillies", unit: "kg", stock: 2, minimum: 1, unitCost: 80, category: "Produce" },
-    { id: "i24", name: "Capsicum", unit: "kg", stock: 4, minimum: 2, unitCost: 70, category: "Produce" },
-    { id: "i25", name: "Cabbage", unit: "kg", stock: 4, minimum: 2, unitCost: 35, category: "Produce" },
-    { id: "i26", name: "Carrots", unit: "kg", stock: 5, minimum: 2, unitCost: 50, category: "Produce" },
-    { id: "i27", name: "Green peas", unit: "kg", stock: 4, minimum: 2, unitCost: 100, category: "Produce" },
-    { id: "i28", name: "Sweet corn", unit: "kg", stock: 3, minimum: 1, unitCost: 100, category: "Produce" },
-    { id: "i29", name: "Lemons", unit: "pcs", stock: 30, minimum: 10, unitCost: 5, category: "Produce" },
-    { id: "i30", name: "Coriander leaves", unit: "kg", stock: 1, minimum: 0.5, unitCost: 120, category: "Produce" },
-    { id: "i31", name: "Curry leaves", unit: "pack", stock: 8, minimum: 3, unitCost: 10, category: "Produce" },
-    { id: "i32", name: "Mixed spices", unit: "kg", stock: 2, minimum: 1, unitCost: 300, category: "Essentials" },
-    { id: "i33", name: "Cumin seeds", unit: "kg", stock: 1, minimum: 0.5, unitCost: 280, category: "Essentials" },
-    { id: "i34", name: "Soy sauce", unit: "L", stock: 3, minimum: 1, unitCost: 110, category: "Essentials" },
-    { id: "i35", name: "Chilli sauce", unit: "L", stock: 3, minimum: 1, unitCost: 130, category: "Essentials" },
-    { id: "i36", name: "Noodles", unit: "kg", stock: 5, minimum: 2, unitCost: 90, category: "Grains" },
-    { id: "i37", name: "Pasta", unit: "kg", stock: 4, minimum: 2, unitCost: 120, category: "Grains" },
-    { id: "i38", name: "Tomato puree", unit: "L", stock: 3, minimum: 1, unitCost: 100, category: "Essentials" },
-    { id: "i39", name: "Chicken", unit: "kg", stock: 8, minimum: 3, unitCost: 260, category: "Meat & seafood" },
-    { id: "i40", name: "Eggs", unit: "pcs", stock: 60, minimum: 20, unitCost: 7, category: "Meat & seafood" },
-    { id: "i41", name: "Fish", unit: "kg", stock: 5, minimum: 2, unitCost: 320, category: "Meat & seafood" },
-    { id: "i42", name: "Prawns", unit: "kg", stock: 3, minimum: 1, unitCost: 500, category: "Meat & seafood" },
-    { id: "i43", name: "Mutton", unit: "kg", stock: 4, minimum: 2, unitCost: 650, category: "Meat & seafood" },
-    { id: "i44", name: "Breadcrumbs", unit: "kg", stock: 2, minimum: 1, unitCost: 110, category: "Essentials" },
-    { id: "i45", name: "Mayonnaise", unit: "kg", stock: 2, minimum: 1, unitCost: 180, category: "Dairy" },
-    { id: "i46", name: "Sugar", unit: "kg", stock: 8, minimum: 3, unitCost: 45, category: "Essentials" },
-    { id: "i47", name: "Salt", unit: "kg", stock: 5, minimum: 2, unitCost: 20, category: "Essentials" },
-    { id: "i48", name: "Almonds", unit: "kg", stock: 1, minimum: 0.5, unitCost: 900, category: "Essentials" },
-    { id: "i49", name: "Mangoes", unit: "kg", stock: 4, minimum: 2, unitCost: 100, category: "Produce" },
-    { id: "i50", name: "Bananas", unit: "dozen", stock: 4, minimum: 2, unitCost: 60, category: "Produce" },
-    { id: "i51", name: "Ice cream", unit: "L", stock: 4, minimum: 2, unitCost: 180, category: "Dairy" },
-    { id: "i52", name: "Cocoa powder", unit: "kg", stock: 1, minimum: 0.5, unitCost: 450, category: "Essentials" },
-    { id: "i53", name: "Lettuce", unit: "kg", stock: 2, minimum: 1, unitCost: 100, category: "Produce" },
-    { id: "i54", name: "Tea leaves", unit: "kg", stock: 2, minimum: 1, unitCost: 400, category: "Beverages" },
-    { id: "i55", name: "Fresh cream", unit: "L", stock: 2, minimum: 1, unitCost: 220, category: "Dairy" },
-    { id: "i56", name: "Vinegar", unit: "L", stock: 2, minimum: 1, unitCost: 80, category: "Essentials" },
-    { id: "i57", name: "Black pepper", unit: "kg", stock: 1, minimum: 0.5, unitCost: 500, category: "Essentials" },
-    { id: "i58", name: "Kidney beans", unit: "kg", stock: 4, minimum: 2, unitCost: 130, category: "Grains" },
-    { id: "i59", name: "Lentils", unit: "kg", stock: 6, minimum: 2, unitCost: 110, category: "Grains" },
-    { id: "i60", name: "Chickpeas", unit: "kg", stock: 5, minimum: 2, unitCost: 100, category: "Grains" }
-  ],
-  purchases: [],
-  menuDefaultsVersion: 4,
-  inventoryDefaultsVersion: 1
+    ["i1","Rice","kg",18,10,60,"Grains"],["i2","Potatoes","kg",6,8,30,"Produce"],["i3","Paneer","kg",4,3,360,"Dairy"],["i4","Cooking oil","L",3,5,150,"Essentials"],["i5","Coffee powder","kg",2,1,420,"Beverages"],["i6","Wheat flour","kg",12,4,40,"Grains"],["i7","All-purpose flour","kg",8,3,45,"Grains"],["i8","Semolina","kg",5,2,55,"Grains"],["i9","Flattened rice","kg",5,2,50,"Grains"],["i10","Dosa batter","kg",6,2,60,"Grains"],
+    ["i11","Chickpea flour","kg",4,2,90,"Grains"],["i12","Bread","pack",8,3,35,"Bakery"],["i13","Pav buns","pack",6,2,40,"Bakery"],["i14","Milk","L",12,4,60,"Dairy"],["i15","Curd","kg",5,2,90,"Dairy"],["i16","Butter","kg",2,1,480,"Dairy"],["i17","Cheese","kg",3,1,420,"Dairy"],["i18","Coconut","pcs",12,4,35,"Produce"],["i19","Onions","kg",10,4,35,"Produce"],["i20","Tomatoes","kg",8,3,40,"Produce"],
+    ["i21","Ginger","kg",2,1,120,"Produce"],["i22","Garlic","kg",2,1,160,"Produce"],["i23","Green chillies","kg",2,1,80,"Produce"],["i24","Capsicum","kg",4,2,70,"Produce"],["i25","Cabbage","kg",4,2,35,"Produce"],["i26","Carrots","kg",5,2,50,"Produce"],["i27","Green peas","kg",4,2,100,"Produce"],["i28","Sweet corn","kg",3,1,100,"Produce"],["i29","Lemons","pcs",30,10,5,"Produce"],["i30","Coriander leaves","kg",1,0.5,120,"Produce"],
+    ["i31","Curry leaves","pack",8,3,10,"Produce"],["i32","Mixed spices","kg",2,1,300,"Essentials"],["i33","Cumin seeds","kg",1,0.5,280,"Essentials"],["i34","Soy sauce","L",3,1,110,"Essentials"],["i35","Chilli sauce","L",3,1,130,"Essentials"],["i36","Noodles","kg",5,2,90,"Grains"],["i37","Pasta","kg",4,2,120,"Grains"],["i38","Tomato puree","L",3,1,100,"Essentials"],["i39","Chicken","kg",8,3,260,"Meat & seafood"],["i40","Eggs","pcs",60,20,7,"Meat & seafood"],
+    ["i41","Fish","kg",5,2,320,"Meat & seafood"],["i42","Prawns","kg",3,1,500,"Meat & seafood"],["i43","Mutton","kg",4,2,650,"Meat & seafood"],["i44","Breadcrumbs","kg",2,1,110,"Essentials"],["i45","Mayonnaise","kg",2,1,180,"Dairy"],["i46","Sugar","kg",8,3,45,"Essentials"],["i47","Salt","kg",5,2,20,"Essentials"],["i48","Almonds","kg",1,0.5,900,"Essentials"],["i49","Mangoes","kg",4,2,100,"Produce"],["i50","Bananas","dozen",4,2,60,"Produce"],
+    ["i51","Ice cream","L",4,2,180,"Dairy"],["i52","Cocoa powder","kg",1,0.5,450,"Essentials"],["i53","Lettuce","kg",2,1,100,"Produce"],["i54","Tea leaves","kg",2,1,400,"Beverages"],["i55","Fresh cream","L",2,1,220,"Dairy"],["i56","Vinegar","L",2,1,80,"Essentials"],["i57","Black pepper","kg",1,0.5,500,"Essentials"],["i58","Kidney beans","kg",4,2,130,"Grains"],["i59","Lentils","kg",6,2,110,"Grains"],["i60","Chickpeas","kg",5,2,100,"Grains"]
+  ].map(([id, name, unit, stock, minimum, unitCost, category]) => ({ id, name, unit, stock, minimum, unitCost, category })),
+  purchases: [], menuDefaultsVersion: 4, inventoryDefaultsVersion: 1
 };
 
-function hasCost(value) {
-  return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
-}
+const hasCost = (v) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
+const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (a) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(a);
+const statusBadge = (s) => `<span class="badge ${escapeHtml(s.toLowerCase())}">${escapeHtml(s)}</span>`;
+const getTodayOrders = () => data.orders.filter((o) => o.day === todayKey());
+const getOrderItems = (o) => Array.isArray(o.items) ? o.items : [{ name: o.item, qty: Number(o.qty), unitPrice: Number(o.total) / Number(o.qty), unitCost: o.unitCost }];
+const orderItemsSummary = (o) => getOrderItems(o).map((i) => `${i.name} × ${i.qty}`).join(", ");
+const heading = (t, s, a = "") => `<div class="page-heading"><div><div class="eyebrow">Royal's Canteen</div><h1>${t}</h1><p class="page-subtitle">${s}</p></div>${a}</div>`;
+const emptyState = (i, t, c) => `<div class="empty-state"><span>${i}</span><strong>${t}</strong>${c}</div>`;
 
 function loadData() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return structuredClone(seedData);
-    const parsed = JSON.parse(saved);
-    if (!parsed || !Array.isArray(parsed.menu) || !Array.isArray(parsed.orders) || !Array.isArray(parsed.inventory)) {
-      throw new Error("Saved canteen data has an invalid format.");
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return structuredClone(seedData);
+    const p = JSON.parse(raw);
+    if (!p || !Array.isArray(p.menu) || !Array.isArray(p.orders) || !Array.isArray(p.inventory)) throw new Error("Invalid format");
+    if (Number(p.menuDefaultsVersion || 0) < 4) {
+      const ids = new Set(p.menu.map((i) => i.id));
+      p.menu.push(...seedData.menu.filter((i) => Number(i.id.slice(1)) >= 7 && !ids.has(i.id)));
+      p.menuDefaultsVersion = 4; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
     }
-    const menuDefaultsVersion = 4;
-    if (Number(parsed.menuDefaultsVersion || 0) < menuDefaultsVersion) {
-      const existingIds = new Set(parsed.menu.map((item) => item.id));
-      const addedMenuItems = seedData.menu.filter((item) =>
-        Number(item.id.slice(1)) >= 7 && !existingIds.has(item.id)
-      );
-      parsed.menu.push(...addedMenuItems);
-      parsed.menuDefaultsVersion = menuDefaultsVersion;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      } catch (error) {
-        console.error("Could not save the updated default menu:", error);
-      }
+    if (Number(p.inventoryDefaultsVersion || 0) < 1) {
+      const ids = new Set(p.inventory.map((i) => i.id));
+      p.inventory.push(...seedData.inventory.filter((i) => Number(i.id.slice(1)) >= 6 && !ids.has(i.id)));
+      p.inventoryDefaultsVersion = 1; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
     }
-    const inventoryDefaultsVersion = 1;
-    if (Number(parsed.inventoryDefaultsVersion || 0) < inventoryDefaultsVersion) {
-      const existingIds = new Set(parsed.inventory.map((item) => item.id));
-      const addedInventoryItems = seedData.inventory.filter((item) =>
-        Number(item.id.slice(1)) >= 6 && !existingIds.has(item.id)
-      );
-      parsed.inventory.push(...addedInventoryItems);
-      parsed.inventoryDefaultsVersion = inventoryDefaultsVersion;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      } catch (error) {
-        console.error("Could not save the updated default inventory:", error);
-      }
-    }
-    const defaultCosts = new Map(seedData.menu.map((item) => [item.id, item.costPerServing]));
-    parsed.menu = parsed.menu.map((item) => ({
-      ...item,
-      costPerServing: hasCost(item.costPerServing)
-        ? Number(item.costPerServing)
-        : defaultCosts.get(item.id) ?? null
-    }));
-    parsed.orders = parsed.orders.map((order) => {
-      if (Array.isArray(order.items)) return order;
-      const item = parsed.menu.find((menuItem) => menuItem.name === order.item);
-      const unitCost = order.unitCost !== undefined
-        ? order.unitCost
-        : item ? item.costPerServing : null;
-      return {
-        ...order,
-        unitCost,
-        items: [{
-          name: order.item,
-          qty: Number(order.qty),
-          unitPrice: Number(order.total) / Number(order.qty),
-          unitCost
-        }]
-      };
+    const mCosts = new Map(seedData.menu.map((i) => [i.id, i.costPerServing]));
+    p.menu = p.menu.map((i) => ({ ...i, costPerServing: hasCost(i.costPerServing) ? Number(i.costPerServing) : mCosts.get(i.id) ?? null }));
+    p.orders = p.orders.map((o) => {
+      if (Array.isArray(o.items)) return o;
+      const m = p.menu.find((x) => x.name === o.item), uc = o.unitCost !== undefined ? o.unitCost : m ? m.costPerServing : null;
+      return { ...o, unitCost: uc, items: [{ name: o.item, qty: Number(o.qty), unitPrice: Number(o.total) / Number(o.qty), unitCost: uc }] };
     });
-    parsed.inventory = parsed.inventory.map((item) => {
-      const seedItem = seedData.inventory.find((seed) => seed.id === item.id);
-      return {
-        ...item,
-        unitCost: hasCost(item.unitCost) ? Number(item.unitCost) : seedItem?.unitCost ?? null
-      };
-    });
-    if (!Array.isArray(parsed.purchases)) parsed.purchases = [];
-    return parsed;
-  } catch (error) {
-    console.error("Could not load saved canteen data:", error);
-    return structuredClone(seedData);
-  }
+    const iCosts = new Map(seedData.inventory.map((i) => [i.id, i.unitCost]));
+    p.inventory = p.inventory.map((i) => ({ ...i, unitCost: hasCost(i.unitCost) ? Number(i.unitCost) : iCosts.get(i.id) ?? null }));
+    if (!Array.isArray(p.purchases)) p.purchases = [];
+    return p;
+  } catch { return structuredClone(seedData); }
 }
 
-let data = loadData();
-let activePage = (document.body && document.body.dataset.defaultPage) || "overview";
-let toastTimer;
-let serverSync = Promise.resolve();
-let serverApiEnabled = window.location.protocol !== "file:" && !window.location.hostname.endsWith(".github.io");
-
-const pageContent = document.querySelector("#page-content");
-const modalBackdrop = document.querySelector("#modal-backdrop");
-const modal = document.querySelector("#modal");
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  })[character]);
-}
+let data = loadData(), activePage = document.body?.dataset.defaultPage || "overview", toastTimer, serverSync = Promise.resolve();
+let serverApiEnabled = location.protocol !== "file:" && !location.hostname.endsWith(".github.io");
+const pageContent = document.querySelector("#page-content"), modalBackdrop = document.querySelector("#modal-backdrop"), modal = document.querySelector("#modal");
 
 function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    if (serverApiEnabled) queueServerSync(JSON.stringify(data));
-    return true;
-  } catch (error) {
-    console.error("Could not save canteen data:", error);
-    showToast("Couldn't save changes. Check your browser storage settings.");
-    return false;
-  }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); if (serverApiEnabled) queueServerSync(JSON.stringify(data)); return true; }
+  catch { showToast("Couldn't save changes. Check your browser storage settings."); return false; }
 }
-
-function queueServerSync(snapshot) {
-  serverSync = serverSync.then(async () => {
-    const response = await fetch("/api/data", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: snapshot
-    });
-    if (!response.ok) throw new Error(`Server returned ${response.status}.`);
-  }).catch((error) => {
-    console.error("Could not sync canteen data with the server:", error);
-    showToast("Changes are saved in this browser, but couldn't sync with the server.");
-  });
+function queueServerSync(snap) {
+  serverSync = serverSync.then(async () => { const r = await fetch("/api/data", { method: "PUT", headers: { "Content-Type": "application/json" }, body: snap }); if (!r.ok) throw new Error(r.status); })
+    .catch(() => showToast("Changes are saved in this browser, but couldn't sync with the server."));
 }
-
 async function loadServerData() {
   if (!serverApiEnabled) return;
   try {
-    const response = await fetch("/api/data");
-    const isJson = (response.headers.get("content-type") || "").includes("application/json");
-    if (response.status === 404) {
-      if (!isJson) {
-        serverApiEnabled = false;
-        return;
-      }
-      queueServerSync(JSON.stringify(data));
-      return;
-    }
-    if (!response.ok) throw new Error(`Server returned ${response.status}.`);
-    if (!isJson) {
-      serverApiEnabled = false;
-      return;
-    }
-    const savedData = await response.json();
-    if (!savedData || !Array.isArray(savedData.menu) ||
-        !Array.isArray(savedData.orders) || !Array.isArray(savedData.inventory)) {
-      throw new Error("The server returned invalid canteen data.");
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
-    data = loadData();
-    renderPage();
-    const normalizedData = JSON.stringify(data);
-    if (normalizedData !== JSON.stringify(savedData)) queueServerSync(normalizedData);
-  } catch (error) {
-    console.error("Could not load canteen data from the server:", error);
-    showToast("Couldn't load data from the server. Browser-saved data is still available.");
-  }
-}
-
-function money(amount) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency", currency: "INR", maximumFractionDigits: 2
-  }).format(amount);
-}
-
-function statusBadge(status) {
-  return `<span class="badge ${escapeHtml(status.toLowerCase())}">${escapeHtml(status)}</span>`;
-}
-
-function getTodayOrders() {
-  return data.orders.filter((order) => order.day === todayKey());
-}
-
-function getOrderItems(order) {
-  if (Array.isArray(order.items)) return order.items;
-  return [{
-    name: order.item,
-    qty: Number(order.qty),
-    unitPrice: Number(order.total) / Number(order.qty),
-    unitCost: order.unitCost
-  }];
-}
-
-function orderItemsSummary(order) {
-  return getOrderItems(order).map((item) =>
-    `${item.name} × ${item.qty}`
-  ).join(", ");
-}
-
-function todayKey() {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const r = await fetch("/api/data"), isJson = (r.headers.get("content-type") || "").includes("application/json");
+    if (r.status === 404) { if (!isJson) { serverApiEnabled = false; return; } queueServerSync(JSON.stringify(data)); return; }
+    if (!r.ok || !isJson) { if (!isJson) serverApiEnabled = false; return; }
+    const s = await r.json();
+    if (!s || !Array.isArray(s.menu) || !Array.isArray(s.orders) || !Array.isArray(s.inventory)) throw new Error("Invalid data");
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); data = loadData(); renderPage();
+    if (JSON.stringify(data) !== JSON.stringify(s)) queueServerSync(JSON.stringify(data));
+  } catch { showToast("Couldn't load data from the server. Browser-saved data is still available."); }
 }
 
 function getTodayFinancials() {
-  const orders = getTodayOrders().filter((order) => order.status !== "Cancelled");
-  const revenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
-  let costOfGoods = 0;
-  let unknownCostOrders = 0;
-  orders.forEach((order) => {
-    const items = getOrderItems(order);
-    if (items.some((item) => !hasCost(item.unitCost))) {
-      unknownCostOrders += 1;
-    }
-    costOfGoods += items.reduce((sum, item) =>
-      sum + (hasCost(item.unitCost) ? Number(item.unitCost) * Number(item.qty) : 0), 0
-    );
+  const orders = getTodayOrders().filter((o) => o.status !== "Cancelled");
+  let revenue = 0, costOfGoods = 0, unknownCostOrders = 0;
+  orders.forEach((o) => {
+    revenue += Number(o.total); const its = getOrderItems(o);
+    if (its.some((i) => !hasCost(i.unitCost))) unknownCostOrders += 1;
+    costOfGoods += its.reduce((s, i) => s + (hasCost(i.unitCost) ? Number(i.unitCost) * Number(i.qty) : 0), 0);
   });
-  const purchases = (data.purchases || []).filter((purchase) => purchase.day === todayKey());
-  const purchaseSpend = purchases.reduce((sum, purchase) => sum + Number(purchase.total), 0);
-  return {
-    revenue,
-    costOfGoods,
-    grossProfit: unknownCostOrders === 0 ? revenue - costOfGoods : null,
-    purchaseSpend,
-    unknownCostOrders,
-    orderCount: orders.length
-  };
+  const purchaseSpend = (data.purchases || []).filter((p) => p.day === todayKey()).reduce((s, p) => s + Number(p.total), 0);
+  return { revenue, costOfGoods, grossProfit: unknownCostOrders ? null : revenue - costOfGoods, purchaseSpend, unknownCostOrders, orderCount: orders.length };
 }
-
-function showToast(message) {
-  const toast = document.querySelector("#toast");
-  toast.textContent = message;
-  toast.classList.add("visible");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("visible"), 2800);
-}
-
-function setPage(page) {
-  activePage = page;
-  document.querySelectorAll(".nav-link").forEach((link) => {
-    link.classList.toggle("active", link.dataset.page === page);
-  });
-  document.querySelector("#breadcrumb-page").textContent = PAGE_TITLES[page];
-  document.querySelector("#sidebar").classList.remove("open");
-  renderPage();
-}
-
-function heading(title, subtitle, action = "") {
-  return `<div class="page-heading"><div><div class="eyebrow">Royal's Canteen</div><h1>${title}</h1><p class="page-subtitle">${subtitle}</p></div>${action}</div>`;
-}
-
-function emptyState(icon, title, copy) {
-  return `<div class="empty-state"><span>${icon}</span><strong>${title}</strong>${copy}</div>`;
-}
+function showToast(msg) { const t = document.querySelector("#toast"); t.textContent = msg; t.classList.add("visible"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("visible"), 2800); }
+function setPage(page) { activePage = page; document.querySelectorAll(".nav-link").forEach((l) => l.classList.toggle("active", l.dataset.page === page)); document.querySelector("#breadcrumb-page").textContent = PAGE_TITLES[page]; document.querySelector("#sidebar").classList.remove("open"); renderPage(); }
 
 function renderOverview() {
-  const todayOrders = getTodayOrders();
-  const activeOrders = todayOrders.filter((order) => ["Preparing", "Ready"].includes(order.status));
-  const lowStock = data.inventory.filter((item) => Number(item.stock) <= Number(item.minimum));
-  const financials = getTodayFinancials();
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const topItems = data.menu.map((item) => ({
-    ...item,
-    sold: todayOrders.filter((order) => order.status !== "Cancelled")
-      .reduce((sum, order) => sum + getOrderItems(order)
-        .filter((orderItem) => orderItem.name === item.name)
-        .reduce((itemSum, orderItem) => itemSum + Number(orderItem.qty), 0), 0)
-  })).sort((a, b) => b.sold - a.sold).slice(0, 4);
-  const recentOrders = [...data.orders].slice(0, 5);
-  return `${heading(`${greeting}, Admin 👋`, "Here's what's happening at your canteen today.",
-    `<button class="button" data-action="new-order">＋ New order</button>`)}
+  const today = getTodayOrders(), active = today.filter((o) => ["Preparing", "Ready"].includes(o.status)), low = data.inventory.filter((i) => Number(i.stock) <= Number(i.minimum)), f = getTodayFinancials(), h = new Date().getHours();
+  const greet = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  const top = data.menu.map((i) => ({ ...i, sold: today.filter((o) => o.status !== "Cancelled").reduce((s, o) => s + getOrderItems(o).filter((x) => x.name === i.name).reduce((a, x) => a + Number(x.qty), 0), 0) })).sort((a, b) => b.sold - a.sold).slice(0, 4);
+  const recent = data.orders.slice(0, 5);
+  return `${heading(`${greet}, Admin 👋`, "Here's what's happening at your canteen today.", `<button class="button" data-action="new-order">＋ New order</button>`)}
     <div class="stats-grid">
-      <article class="stat-card"><div class="stat-top"><span>Today's revenue</span><span class="stat-icon">₹</span></div><div class="stat-value">${money(financials.revenue)}</div><div class="stat-note"><span class="positive">●</span> From ${todayOrders.length} orders today</div></article>
-      <article class="stat-card"><div class="stat-top"><span>Total orders</span><span class="stat-icon">▤</span></div><div class="stat-value">${todayOrders.length}</div><div class="stat-note">${activeOrders.length} orders need attention</div></article>
-      <article class="stat-card"><div class="stat-top"><span>Today's gross profit</span><span class="stat-icon">↗</span></div><div class="stat-value">${financials.grossProfit === null ? "—" : money(financials.grossProfit)}</div><div class="stat-note">${financials.unknownCostOrders ? "Add item costs to calculate profit" : "Sales minus food preparation costs"}</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Today's revenue</span><span class="stat-icon">₹</span></div><div class="stat-value">${money(f.revenue)}</div><div class="stat-note"><span class="positive">●</span> From ${today.length} orders today</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Total orders</span><span class="stat-icon">▤</span></div><div class="stat-value">${today.length}</div><div class="stat-note">${active.length} orders need attention</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Today's gross profit</span><span class="stat-icon">↗</span></div><div class="stat-value">${f.grossProfit === null ? "—" : money(f.grossProfit)}</div><div class="stat-note">${f.unknownCostOrders ? "Add item costs to calculate profit" : "Sales minus food preparation costs"}</div></article>
       <article class="stat-card"><div class="stat-top"><span>Menu items</span><span class="stat-icon">▦</span></div><div class="stat-value">${data.menu.length}</div><div class="stat-note">Across your canteen menu</div></article>
-      <article class="stat-card"><div class="stat-top"><span>Low stock items</span><span class="stat-icon">▧</span></div><div class="stat-value">${lowStock.length}</div><div class="stat-note">${lowStock.length ? "Restock needed soon" : "All essentials are stocked"}</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Low stock items</span><span class="stat-icon">▧</span></div><div class="stat-value">${low.length}</div><div class="stat-note">${low.length ? "Restock needed soon" : "All essentials are stocked"}</div></article>
     </div>
     <div class="dashboard-grid">
-      <section class="panel"><div class="panel-header"><h2>Recent orders</h2><button class="panel-link" data-page="orders">View all orders →</button></div>
-        ${recentOrders.length ? `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${recentOrders.map((order) => `<tr><td class="cell-strong">#${escapeHtml(order.id)}</td><td>${escapeHtml(order.customer)}</td><td>${escapeHtml(orderItemsSummary(order))}</td><td class="cell-strong">${money(order.total)}</td><td>${statusBadge(order.status)}</td></tr>`).join("")}</tbody></table></div>` : emptyState("▤", "No orders yet", "New orders will show up here.")}
-      </section>
-      <section class="panel"><div class="panel-header"><h2>Popular items today</h2><button class="panel-link" data-page="menu">View menu →</button></div>
-        ${topItems.length ? `<div class="popular-list">${topItems.map((item) => `<div class="popular-item"><span class="food-emoji">${escapeHtml(item.emoji)}</span><div><div class="popular-name">${escapeHtml(item.name)}</div><div class="popular-meta">${item.sold} sold today</div></div><span class="popular-sales">${money(item.price)}</span></div>`).join("")}</div>` : emptyState("🍽️", "No menu items", "Add items to get started.")}
-        ${lowStock.length ? `<div class="inventory-alert">⚠ ${lowStock.length} item${lowStock.length === 1 ? "" : "s"} running low: ${lowStock.map((item) => escapeHtml(item.name)).join(", ")}.</div>` : ""}
-      </section>
+      <section class="panel"><div class="panel-header"><h2>Recent orders</h2><button class="panel-link" data-page="orders">View all orders →</button></div>${recent.length ? `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${recent.map((o) => `<tr><td class="cell-strong">#${escapeHtml(o.id)}</td><td>${escapeHtml(o.customer)}</td><td>${escapeHtml(orderItemsSummary(o))}</td><td class="cell-strong">${money(o.total)}</td><td>${statusBadge(o.status)}</td></tr>`).join("")}</tbody></table></div>` : emptyState("▤", "No orders yet", "New orders will show up here.")}</section>
+      <section class="panel"><div class="panel-header"><h2>Popular items today</h2><button class="panel-link" data-page="menu">View menu →</button></div>${top.length ? `<div class="popular-list">${top.map((i) => `<div class="popular-item"><span class="food-emoji">${escapeHtml(i.emoji)}</span><div><div class="popular-name">${escapeHtml(i.name)}</div><div class="popular-meta">${i.sold} sold today</div></div><span class="popular-sales">${money(i.price)}</span></div>`).join("")}</div>` : emptyState("🍽️", "No menu items", "Add items to get started.")}${low.length ? `<div class="inventory-alert">⚠ ${low.length} item${low.length === 1 ? "" : "s"} running low: ${low.map((i) => escapeHtml(i.name)).join(", ")}.</div>` : ""}</section>
     </div>`;
 }
 
 function renderOrders() {
-  const statuses = ["All statuses", "Preparing", "Ready", "Completed", "Cancelled"];
   return `${heading("Orders", "Track and manage canteen orders.", `<button class="button" data-action="new-order">＋ New order</button>`)}
-    <div class="toolbar" style="margin-bottom:14px"><label class="search-box"><span>⌕</span><input id="order-search" placeholder="Search order or customer" aria-label="Search order or customer"></label><select class="select-control" id="order-status" aria-label="Filter by status">${statuses.map((status) => `<option>${status}</option>`).join("")}</select></div>
+    <div class="toolbar" style="margin-bottom:14px"><label class="search-box"><span>⌕</span><input id="order-search" placeholder="Search order or customer" aria-label="Search order or customer"></label><select class="select-control" id="order-status" aria-label="Filter by status">${["All statuses", "Preparing", "Ready", "Completed", "Cancelled"].map((s) => `<option>${s}</option>`).join("")}</select></div>
     <section class="data-panel" id="orders-table"></section>`;
 }
-
 function renderOrdersTable() {
-  const search = (document.querySelector("#order-search")?.value || "").trim().toLowerCase();
-  const status = document.querySelector("#order-status")?.value || "All statuses";
-  const orders = data.orders.filter((order) => {
-    const matchesSearch = `${order.id} ${order.customer} ${orderItemsSummary(order)}`.toLowerCase().includes(search);
-    return matchesSearch && (status === "All statuses" || order.status === status);
-  });
-  document.querySelector("#orders-table").innerHTML = orders.length ? `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Item</th><th>Time</th><th>Payment</th><th>Total</th><th>Status</th><th>Update</th></tr></thead><tbody>${orders.map((order) => {
-    const nextStatus = order.status === "Preparing" ? "Ready" : order.status === "Ready" ? "Completed" : "";
-    return `<tr><td class="cell-strong">#${escapeHtml(order.id)}</td><td>${escapeHtml(order.customer)}</td><td>${escapeHtml(orderItemsSummary(order))}</td><td>${escapeHtml(order.time)}</td><td>${escapeHtml(order.payment)}</td><td class="cell-strong">${money(order.total)}</td><td>${statusBadge(order.status)}</td><td>${nextStatus ? `<button class="button secondary small" data-action="advance-order" data-id="${escapeHtml(order.id)}">${nextStatus}</button>` : "—"}</td></tr>`;
+  const q = (document.querySelector("#order-search")?.value || "").trim().toLowerCase(), st = document.querySelector("#order-status")?.value || "All statuses";
+  const list = data.orders.filter((o) => `${o.id} ${o.customer} ${orderItemsSummary(o)}`.toLowerCase().includes(q) && (st === "All statuses" || o.status === st));
+  document.querySelector("#orders-table").innerHTML = list.length ? `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Item</th><th>Time</th><th>Payment</th><th>Total</th><th>Status</th><th>Update</th></tr></thead><tbody>${list.map((o) => {
+    const nx = o.status === "Preparing" ? "Ready" : o.status === "Ready" ? "Completed" : "";
+    return `<tr><td class="cell-strong">#${escapeHtml(o.id)}</td><td>${escapeHtml(o.customer)}</td><td>${escapeHtml(orderItemsSummary(o))}</td><td>${escapeHtml(o.time)}</td><td>${escapeHtml(o.payment)}</td><td class="cell-strong">${money(o.total)}</td><td>${statusBadge(o.status)}</td><td>${nx ? `<button class="button secondary small" data-action="advance-order" data-id="${escapeHtml(o.id)}">${nx}</button>` : "—"}</td></tr>`;
   }).join("")}</tbody></table></div>` : emptyState("⌕", "No matching orders", "Try changing your search or status filter.");
 }
 
-const MENU_IMAGE_POOLS = {
-  dosa: [
-    "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=700&q=80"
-  ],
-  idli: [
-    "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=700&q=80"
-  ],
-  paratha: [
-    "https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80"
-  ],
-  biryani: [
-    "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1633945274405-b6c8069047b0?auto=format&fit=crop&w=700&q=80"
-  ],
-  chicken: [
-    "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&w=700&q=80"
-  ],
-  egg: [
-    "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=700&q=80"
-  ],
-  seafood: [
-    "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=700&q=80"
-  ],
-  paneer: [
-    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=700&q=80"
-  ],
-  roll: [
-    "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80"
-  ],
-  samosa: [
-    "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=700&q=80"
-  ],
-  sandwich: [
-    "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1550507992-eb63ffee0847?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1539252554453-80ab65ce3586?auto=format&fit=crop&w=700&q=80"
-  ],
-  burger: [
-    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=700&q=80"
-  ],
-  fries: [
-    "https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1518013431117-eb1465fa5752?auto=format&fit=crop&w=700&q=80"
-  ],
-  noodles: [
-    "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=700&q=80"
-  ],
-  pasta: [
-    "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=700&q=80"
-  ],
-  thali: [
-    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=700&q=80"
-  ],
-  coffee: [
-    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=700&q=80"
-  ],
-  tea: [
-    "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?auto=format&fit=crop&w=700&q=80"
-  ],
-  drink: [
-    "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=700&q=80"
-  ],
-  dessert: [
-    "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=700&q=80"
-  ],
-  fruit: [
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=700&q=80",
-    "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=700&q=80"
-  ]
+const IMG = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const MENU_POOLS = {
+  dosa: ["1668236543090-82eba5ee5976","1630383249896-424e482df921","1589301760014-d929f3979dbc"],
+  idli: ["1589301760014-d929f3979dbc","1630383249896-424e482df921","1668236543090-82eba5ee5976"],
+  paratha: ["1626132647523-66f5bf380027","1565557623262-b51c2513a641","1606491956689-2ea866880c84"],
+  biryani: ["1563379091339-03b21ab4a4f8","1589302168068-964664d93dc0","1633945274405-b6c8069047b0"],
+  chicken: ["1631515243349-e0cb75fb8d3a","1603894584373-5ac82b2ae398","1599487488170-d11ec9c172f0"],
+  egg: ["1525351484163-7529414344d8","1482049016688-2d3e1b311543","1510693206972-df098062cb71"],
+  seafood: ["1534422298391-e4f8c172dddb","1559737558-2f5a35f4523b","1565680018434-b513d5e5fd47"],
+  paneer: ["1565557623262-b51c2513a641","1631452180519-c014fe946bc7","1585937421612-70a008356fbe"],
+  roll: ["1626700051175-6818013e1d4f","1565557623262-b51c2513a641","1601050690597-df0568f70950"],
+  samosa: ["1601050690597-df0568f70950","1606491956689-2ea866880c84","1567337710282-00832b415979"],
+  sandwich: ["1528735602780-2552fd46c7af","1550507992-eb63ffee0847","1539252554453-80ab65ce3586"],
+  burger: ["1568901346375-23c9450c58cd","1550547660-d9450f859349","1551782450-a2132b4ba21d"],
+  fries: ["1576107232684-1279f390859f","1541592106381-b31e9677c0e5","1518013431117-eb1465fa5752"],
+  noodles: ["1612929633738-8fe44f7ec841","1569718212165-3a8278d5f624","1555126634-323283e090fa"],
+  pasta: ["1645112411341-6c4fd023714a","1555949258-eb67b1ef0ceb","1621996346565-e3dbc646d9a9"],
+  thali: ["1585937421612-70a008356fbe","1546833999-b9f581a1996d","1606491956689-2ea866880c84"],
+  coffee: ["1461023058943-07fcbe16d735","1517701550927-30cf4ba1dba5","1509042239860-f550ce710b93"],
+  tea: ["1571934811356-5cc061b6821f","1544787219-7f47ccb76574","1597318181409-cf64d0b5d8a2"],
+  drink: ["1572490122747-3968b75cc699","1513558161293-cdaf765ed2fd","1577805947697-89e18249d767"],
+  dessert: ["1563805042-7684c019e1cb","1606313564200-e75d5e30476c","1551024601-bec78aea704b"],
+  fruit: ["1546069901-ba9599a7e63c","1490474418585-ba9bad8fd0ea","1519996529931-28324d5a630e"]
 };
-
-const menuCardPhotoIndex = new Map();
-const menuSwipeStartX = new Map();
-
-function menuFallbackPhoto(name, index) {
-  return `https://placehold.co/600x380/245C43/FFFFFF?text=${encodeURIComponent(`${name} (${index + 1}/3)`)}`;
+const POOL_RULES = [[/dosa|uttapam/,"dosa"],[/idli|poha|upma/,"idli"],[/paratha|bhature/,"paratha"],[/biryani|pulao/,"biryani"],[/fish|prawn/,"seafood"],[/egg|omelette/,"egg"],[/pasta/,"pasta"],[/noodle|manchurian/,"noodles"],[/burger|vada pav/,"burger"],[/sandwich/,"sandwich"],[/fries/,"fries"],[/roll|wrap|shawarma/,"roll"],[/samosa|kachori|pakora|dhokla|chaat|momos/,"samosa"],[/chicken|mutton|kebab|tandoori|lollipop|keema/,"chicken"],[/paneer/,"paneer"],[/coffee|chocolate/,"coffee"],[/chai|tea/,"tea"],[/lassi|soda|buttermilk|milk|shake|drink/,"drink"],[/brownie|ice cream|gulab|dessert/,"dessert"],[/fruit/,"fruit"]];
+const menuPhotoIdx = new Map(), menuSwipeX = new Map();
+const menuFallback = (n, i) => `https://placehold.co/600x380/245C43/FFFFFF?text=${encodeURIComponent(`${n} (${i + 1}/3)`)}`;
+function getMenuItemImages(it) {
+  if (Array.isArray(it.images) && it.images.length) return it.images;
+  const txt = `${it.name || ""} ${it.category || ""}`.toLowerCase();
+  const key = (/brownie/.test(txt) ? "dessert" : POOL_RULES.find(([re]) => re.test(txt))?.[1]) || "thali";
+  const pool = MENU_POOLS[key], off = [...String(it.id || it.name)].reduce((a, c) => a + c.charCodeAt(0), 0) % pool.length;
+  return pool.map((_, i) => IMG(pool[(i + off) % pool.length]));
 }
-
-function getMenuItemImages(item) {
-  if (Array.isArray(item.images) && item.images.length > 0) return item.images;
-  const label = `${item.name || ""} ${item.category || ""}`.toLowerCase();
-  let pool = MENU_IMAGE_POOLS.thali;
-  if (/dosa|uttapam/.test(label)) pool = MENU_IMAGE_POOLS.dosa;
-  else if (/idli|poha|upma/.test(label)) pool = MENU_IMAGE_POOLS.idli;
-  else if (/paratha|bhature/.test(label)) pool = MENU_IMAGE_POOLS.paratha;
-  else if (/biryani|pulao/.test(label)) pool = MENU_IMAGE_POOLS.biryani;
-  else if (/fish|prawn/.test(label)) pool = MENU_IMAGE_POOLS.seafood;
-  else if (/egg|omelette/.test(label)) pool = MENU_IMAGE_POOLS.egg;
-  else if (/pasta/.test(label)) pool = MENU_IMAGE_POOLS.pasta;
-  else if (/noodle|manchurian/.test(label)) pool = MENU_IMAGE_POOLS.noodles;
-  else if (/burger|vada pav/.test(label)) pool = MENU_IMAGE_POOLS.burger;
-  else if (/sandwich/.test(label)) pool = MENU_IMAGE_POOLS.sandwich;
-  else if (/fries/.test(label)) pool = MENU_IMAGE_POOLS.fries;
-  else if (/roll|wrap|shawarma/.test(label)) pool = MENU_IMAGE_POOLS.roll;
-  else if (/samosa|kachori|pakora|dhokla|chaat|momos/.test(label)) pool = MENU_IMAGE_POOLS.samosa;
-  else if (/chicken|mutton|kebab|tandoori|lollipop|keema/.test(label)) pool = MENU_IMAGE_POOLS.chicken;
-  else if (/paneer/.test(label)) pool = MENU_IMAGE_POOLS.paneer;
-  else if (/coffee|chocolate/.test(label) && !/brownie/.test(label)) pool = MENU_IMAGE_POOLS.coffee;
-  else if (/chai|tea/.test(label)) pool = MENU_IMAGE_POOLS.tea;
-  else if (/lassi|soda|buttermilk|milk|shake|drink/.test(label)) pool = MENU_IMAGE_POOLS.drink;
-  else if (/brownie|ice cream|gulab|dessert/.test(label)) pool = MENU_IMAGE_POOLS.dessert;
-  else if (/fruit/.test(label)) pool = MENU_IMAGE_POOLS.fruit;
-
-  // Deterministic rotation per item ID so adjacent dishes in a category show varied hero images
-  const seed = [...String(item.id || item.name)].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const offset = seed % pool.length;
-  return pool.map((_, idx) => pool[(idx + offset) % pool.length]);
-}
-
-function updateMenuCardPhoto(itemId, newIndex) {
-  const item = data.menu.find((entry) => entry.id === itemId);
-  if (!item) return;
-  const images = getMenuItemImages(item);
-  const total = images.length;
-  const idx = ((newIndex % total) + total) % total;
-  menuCardPhotoIndex.set(itemId, idx);
-
-  const card = pageContent.querySelector(`.menu-card[data-menu-id="${CSS.escape(itemId)}"]`);
-  if (!card) return;
+function updateMenuCardPhoto(id, next) {
+  const it = data.menu.find((e) => e.id === id); if (!it) return;
+  const imgs = getMenuItemImages(it), idx = ((next % imgs.length) + imgs.length) % imgs.length;
+  menuPhotoIdx.set(id, idx);
+  const card = pageContent.querySelector(`.menu-card[data-menu-id="${CSS.escape(id)}"]`); if (!card) return;
   const img = card.querySelector(".menu-card-img");
-  const counter = card.querySelector(".menu-photo-counter");
-  const dots = card.querySelectorAll(".menu-dot");
-  if (img) {
-    const fallback = menuFallbackPhoto(item.name, idx);
-    img.onerror = function () {
-      this.onerror = null;
-      this.src = fallback;
-    };
-    img.src = images[idx];
-    img.alt = `${item.name} — photo ${idx + 1} of ${total}`;
-  }
-  if (counter) counter.textContent = `${idx + 1}/${total}`;
-  dots.forEach((dot, i) => {
-    if (i === idx) dot.setAttribute("aria-current", "true");
-    else dot.removeAttribute("aria-current");
-  });
+  if (img) { img.onerror = function () { this.onerror = null; this.src = menuFallback(it.name, idx); }; img.src = imgs[idx]; img.alt = `${it.name} — photo ${idx + 1} of ${imgs.length}`; }
+  const cnt = card.querySelector(".menu-photo-counter"); if (cnt) cnt.textContent = `${idx + 1}/${imgs.length}`;
+  card.querySelectorAll(".menu-dot").forEach((d, i) => i === idx ? d.setAttribute("aria-current", "true") : d.removeAttribute("aria-current"));
 }
-
 function wireMenuCarousels() {
-  pageContent.querySelectorAll(".menu-carousel").forEach((carousel) => {
-    const track = carousel.querySelector(".menu-carousel-track");
-    const statusEl = carousel.querySelector(".menu-carousel-status");
-    const prevBtn = carousel.querySelector('[data-action="menu-carousel-prev"]');
-    const nextBtn = carousel.querySelector('[data-action="menu-carousel-next"]');
-    if (!track) return;
-
-    let lastSettledIndex = 0;
-    let scrollDebounce = null;
-    const slides = () => [...track.querySelectorAll(".menu-card")];
-
-    const getNearestSlideIndex = () => {
-      const list = slides();
-      if (!list.length) return 0;
-      const trackRect = track.getBoundingClientRect();
-      let bestIdx = 0;
-      let bestDist = Infinity;
-      list.forEach((slide, idx) => {
-        const dist = Math.abs(slide.getBoundingClientRect().left - trackRect.left);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = idx;
-        }
-      });
-      return bestIdx;
-    };
-
-    const syncButtonsAndStatus = (announce) => {
-      const list = slides();
-      const idx = getNearestSlideIndex();
-      if (prevBtn && nextBtn) {
-        const atStart = track.scrollLeft <= 2;
-        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
-        const prevWasFocused = document.activeElement === prevBtn;
-        const nextWasFocused = document.activeElement === nextBtn;
-        prevBtn.disabled = atStart;
-        nextBtn.disabled = atEnd;
-        if (atStart && prevWasFocused && !nextBtn.disabled) nextBtn.focus();
-        if (atEnd && nextWasFocused && !prevBtn.disabled) prevBtn.focus();
+  pageContent.querySelectorAll(".menu-carousel").forEach((car) => {
+    const tr = car.querySelector(".menu-carousel-track"), st = car.querySelector(".menu-carousel-status"), pb = car.querySelector('[data-action="menu-carousel-prev"]'), nb = car.querySelector('[data-action="menu-carousel-next"]');
+    if (!tr) return;
+    let last = 0, db = null;
+    const slides = () => [...tr.querySelectorAll(".menu-card")];
+    const sync = (ann) => {
+      const sl = slides(), trL = tr.getBoundingClientRect().left;
+      let best = 0, dist = Infinity;
+      sl.forEach((s, i) => { const d = Math.abs(s.getBoundingClientRect().left - trL); if (d < dist) { dist = d; best = i; } });
+      if (pb && nb) {
+        const aS = tr.scrollLeft <= 2, aE = tr.scrollLeft + tr.clientWidth >= tr.scrollWidth - 2, pf = document.activeElement === pb, nf = document.activeElement === nb;
+        pb.disabled = aS; nb.disabled = aE;
+        if (aS && pf && !nb.disabled) nb.focus();
+        if (aE && nf && !pb.disabled) pb.focus();
       }
-      if (announce && statusEl && idx !== lastSettledIndex && list.length > 0) {
-        statusEl.textContent = `Showing dish ${idx + 1} of ${list.length}`;
-      }
-      lastSettledIndex = idx;
+      if (ann && st && best !== last && sl.length) st.textContent = `Showing dish ${best + 1} of ${sl.length}`;
+      last = best;
     };
-
-    const scrollStep = (direction) => {
-      const list = slides();
-      if (!list.length) return;
-      const cardWidth = list[0].getBoundingClientRect().width + 14;
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      track.scrollBy({
-        left: direction * Math.max(cardWidth, track.clientWidth * 0.72),
-        behavior: reduced ? "auto" : "smooth"
-      });
-    };
-
-    if (prevBtn) prevBtn.addEventListener("click", () => scrollStep(-1));
-    if (nextBtn) nextBtn.addEventListener("click", () => scrollStep(1));
-
-    if ("onscrollend" in window) {
-      track.addEventListener("scrollend", () => syncButtonsAndStatus(true));
-    } else {
-      track.addEventListener("scroll", () => {
-        clearTimeout(scrollDebounce);
-        scrollDebounce = setTimeout(() => syncButtonsAndStatus(true), 120);
-      }, { passive: true });
-    }
-
-    syncButtonsAndStatus(false);
+    const step = (dir) => { const sl = slides(); if (!sl.length) return; tr.scrollBy({ left: dir * Math.max(sl[0].getBoundingClientRect().width + 14, tr.clientWidth * 0.72), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
+    pb?.addEventListener("click", () => step(-1)); nb?.addEventListener("click", () => step(1));
+    if ("onscrollend" in window) tr.addEventListener("scrollend", () => sync(true));
+    else tr.addEventListener("scroll", () => { clearTimeout(db); db = setTimeout(() => sync(true), 120); }, { passive: true });
+    sync(false);
   });
-
-  // Touch swipe on individual card photo stages
-  pageContent.querySelectorAll(".menu-card-media").forEach((stage) => {
-    const id = stage.dataset.menuId;
-    stage.addEventListener("touchstart", (event) => {
-      if (event.touches && event.touches.length === 1) {
-        menuSwipeStartX.set(id, event.touches[0].clientX);
-      }
-    }, { passive: true });
-    stage.addEventListener("touchend", (event) => {
-      const startX = menuSwipeStartX.get(id);
-      if (startX === undefined || !event.changedTouches) return;
-      const diff = event.changedTouches[0].clientX - startX;
-      menuSwipeStartX.delete(id);
-      if (Math.abs(diff) > 35) {
-        const current = menuCardPhotoIndex.get(id) || 0;
-        updateMenuCardPhoto(id, current + (diff < 0 ? 1 : -1));
-      }
-    }, { passive: true });
+  pageContent.querySelectorAll(".menu-card-media").forEach((m) => {
+    const id = m.dataset.menuId;
+    m.addEventListener("touchstart", (e) => { if (e.touches?.length === 1) menuSwipeX.set(id, e.touches[0].clientX); }, { passive: true });
+    m.addEventListener("touchend", (e) => { const sx = menuSwipeX.get(id); menuSwipeX.delete(id); if (sx !== undefined && e.changedTouches) { const df = e.changedTouches[0].clientX - sx; if (Math.abs(df) > 35) updateMenuCardPhoto(id, (menuPhotoIdx.get(id) || 0) + (df < 0 ? 1 : -1)); } }, { passive: true });
   });
 }
-
 function renderMenu() {
-  const categories = [...new Set(data.menu.map((item) => item.category))];
-  let globalCardIndex = 0;
-
-  const sections = categories.map((category) => {
-    const items = data.menu.filter((item) => item.category === category);
-    const cards = items.map((item, idxInCategory) => {
-      const images = getMenuItemImages(item);
-      const activeIdx = menuCardPhotoIndex.get(item.id) || 0;
-      const fallback = menuFallbackPhoto(item.name, activeIdx);
-      const isPriority = globalCardIndex < 2;
-      globalCardIndex += 1;
-
-      const imgAttrs = isPriority
-        ? 'fetchpriority="high"'
-        : 'loading="lazy"';
-
-      const dotsHtml = images.map((_, dotIdx) =>
-        `<button class="menu-dot" type="button" data-action="menu-dot-img" data-id="${escapeHtml(item.id)}" data-index="${dotIdx}" ${dotIdx === activeIdx ? 'aria-current="true"' : ""} aria-label="View photo ${dotIdx + 1} of ${escapeHtml(item.name)}"></button>`
-      ).join("");
-
-      return `<article class="menu-card" role="group" aria-roledescription="slide" aria-label="${idxInCategory + 1} of ${items.length}: ${escapeHtml(item.name)}" data-menu-id="${escapeHtml(item.id)}">
-        <div class="menu-card-media" data-menu-id="${escapeHtml(item.id)}">
-          <img class="menu-card-img" src="${escapeHtml(images[activeIdx])}" alt="${escapeHtml(item.name)} — photo ${activeIdx + 1} of ${images.length}" ${imgAttrs} onerror="this.onerror=null;this.src='${escapeHtml(fallback)}';">
-          <span class="menu-emoji-badge" aria-hidden="true">${escapeHtml(item.emoji)}</span>
-          <span class="menu-photo-counter">${activeIdx + 1}/${images.length}</span>
-          <button class="menu-slide-arrow prev" type="button" data-action="menu-slide-img" data-id="${escapeHtml(item.id)}" data-delta="-1" aria-label="Previous photo of ${escapeHtml(item.name)}">‹</button>
-          <button class="menu-slide-arrow next" type="button" data-action="menu-slide-img" data-id="${escapeHtml(item.id)}" data-delta="1" aria-label="Next photo of ${escapeHtml(item.name)}">›</button>
-          <div class="menu-photo-dots">${dotsHtml}</div>
+  const cats = [...new Set(data.menu.map((i) => i.category))]; let gIdx = 0;
+  const secs = cats.map((cat) => {
+    const items = data.menu.filter((i) => i.category === cat);
+    const cards = items.map((i, pos) => {
+      const imgs = getMenuItemImages(i), idx = menuPhotoIdx.get(i.id) || 0, pri = gIdx++ < 2 ? 'fetchpriority="high"' : 'loading="lazy"';
+      return `<article class="menu-card" role="group" aria-roledescription="slide" aria-label="${pos + 1} of ${items.length}: ${escapeHtml(i.name)}" data-menu-id="${escapeHtml(i.id)}">
+        <div class="menu-card-media" data-menu-id="${escapeHtml(i.id)}">
+          <img class="menu-card-img" src="${escapeHtml(imgs[idx])}" alt="${escapeHtml(i.name)} — photo ${idx + 1} of ${imgs.length}" ${pri} onerror="this.onerror=null;this.src='${escapeHtml(menuFallback(i.name, idx))}';">
+          <span class="menu-emoji-badge" aria-hidden="true">${escapeHtml(i.emoji)}</span><span class="menu-photo-counter">${idx + 1}/${imgs.length}</span>
+          <button class="menu-slide-arrow prev" type="button" data-action="menu-slide-img" data-id="${escapeHtml(i.id)}" data-delta="-1" aria-label="Previous photo of ${escapeHtml(i.name)}">‹</button>
+          <button class="menu-slide-arrow next" type="button" data-action="menu-slide-img" data-id="${escapeHtml(i.id)}" data-delta="1" aria-label="Next photo of ${escapeHtml(i.name)}">›</button>
+          <div class="menu-photo-dots">${imgs.map((_, d) => `<button class="menu-dot" type="button" data-action="menu-dot-img" data-id="${escapeHtml(i.id)}" data-index="${d}" ${d === idx ? 'aria-current="true"' : ""} aria-label="View photo ${d + 1} of ${escapeHtml(i.name)}"></button>`).join("")}</div>
         </div>
         <div class="menu-card-body">
-          <div class="menu-card-top"><h3>${escapeHtml(item.name)}</h3><div class="menu-actions"><button class="icon-button" title="Edit ${escapeHtml(item.name)}" aria-label="Edit ${escapeHtml(item.name)}" data-action="edit-menu" data-id="${escapeHtml(item.id)}">✎</button><button class="icon-button" title="Remove ${escapeHtml(item.name)}" aria-label="Remove ${escapeHtml(item.name)}" data-action="delete-menu" data-id="${escapeHtml(item.id)}">×</button></div></div>
-          <p>${escapeHtml(item.description || "Freshly prepared")}</p>
-          <p class="menu-cost">${hasCost(item.costPerServing) ? `Cost ${money(item.costPerServing)} · Profit ${money(Number(item.price) - Number(item.costPerServing))} / serving` : "Cost not set · profit unavailable"}</p>
-          <div class="menu-card-bottom"><span class="menu-price">${money(item.price)}</span><span class="category-tag">${escapeHtml(item.category)}</span></div>
-        </div>
-      </article>`;
+          <div class="menu-card-top"><h3>${escapeHtml(i.name)}</h3><div class="menu-actions"><button class="icon-button" title="Edit ${escapeHtml(i.name)}" aria-label="Edit ${escapeHtml(i.name)}" data-action="edit-menu" data-id="${escapeHtml(i.id)}">✎</button><button class="icon-button" title="Remove ${escapeHtml(i.name)}" aria-label="Remove ${escapeHtml(i.name)}" data-action="delete-menu" data-id="${escapeHtml(i.id)}">×</button></div></div>
+          <p>${escapeHtml(i.description || "Freshly prepared")}</p><p class="menu-cost">${hasCost(i.costPerServing) ? `Cost ${money(i.costPerServing)} · Profit ${money(Number(i.price) - Number(i.costPerServing))} / serving` : "Cost not set · profit unavailable"}</p>
+          <div class="menu-card-bottom"><span class="menu-price">${money(i.price)}</span><span class="category-tag">${escapeHtml(i.category)}</span></div>
+        </div></article>`;
     }).join("");
-
-    return `<section class="menu-carousel" aria-roledescription="carousel" aria-label="${escapeHtml(category)} menu dishes">
-      <div class="menu-carousel-head">
-        <div>
-          <h2>${escapeHtml(category)}</h2>
-          <span>${items.length} dish${items.length === 1 ? "" : "es"} · Slide photos or scroll across</span>
-        </div>
-        <div class="menu-carousel-controls">
-          <button class="menu-scroll-btn" type="button" data-action="menu-carousel-prev" aria-label="Previous ${escapeHtml(category)} dishes">‹</button>
-          <button class="menu-scroll-btn" type="button" data-action="menu-carousel-next" aria-label="Next ${escapeHtml(category)} dishes">›</button>
-        </div>
-      </div>
-      <div class="menu-carousel-track" tabindex="0" role="group" aria-label="${escapeHtml(category)} dishes">${cards}</div>
-      <p class="sr-only menu-carousel-status" role="status" aria-live="polite"></p>
-    </section>`;
+    return `<section class="menu-carousel" aria-roledescription="carousel" aria-label="${escapeHtml(cat)} menu dishes"><div class="menu-carousel-head"><div><h2>${escapeHtml(cat)}</h2><span>${items.length} dish${items.length === 1 ? "" : "es"} · Slide photos or scroll across</span></div><div class="menu-carousel-controls"><button class="menu-scroll-btn" type="button" data-action="menu-carousel-prev" aria-label="Previous ${escapeHtml(cat)} dishes">‹</button><button class="menu-scroll-btn" type="button" data-action="menu-carousel-next" aria-label="Next ${escapeHtml(cat)} dishes">›</button></div></div><div class="menu-carousel-track" tabindex="0" role="group" aria-label="${escapeHtml(cat)} dishes">${cards}</div><p class="sr-only menu-carousel-status" role="status" aria-live="polite"></p></section>`;
   }).join("");
-
-  return `${heading("Menu", "Manage the dishes and drinks available at your canteen.", `<button class="button" data-action="new-menu-item">＋ Add item</button>`)}
-    ${categories.length ? `<div class="menu-sections">${sections}</div>` : emptyState("🍽️", "Your menu is empty", "Add an item to start building your menu.")}`;
+  return `${heading("Menu", "Manage the dishes and drinks available at your canteen.", `<button class="button" data-action="new-menu-item">＋ Add item</button>`)}${cats.length ? `<div class="menu-sections">${secs}</div>` : emptyState("🍽️", "Your menu is empty", "Add an item to start building your menu.")}`;
 }
 
 function renderInventory() {
-  const rows = data.inventory.map((item) => {
-    const low = Number(item.stock) <= Number(item.minimum);
-    return `<tr><td class="cell-strong">${escapeHtml(item.name)}<span class="cell-sub">${escapeHtml(item.category)}</span></td><td>${escapeHtml(item.stock)} ${escapeHtml(item.unit)}</td><td>${hasCost(item.unitCost) ? `${money(item.unitCost)} / ${escapeHtml(item.unit)}` : "Not set"}</td><td>${escapeHtml(item.minimum)} ${escapeHtml(item.unit)}</td><td>${low ? `<span class="badge cancelled">Low stock</span>` : `<span class="badge completed">In stock</span>`}</td><td><button class="button secondary small" data-action="restock" data-id="${escapeHtml(item.id)}">＋ Restock</button></td></tr>`;
-  }).join("");
-  return `${heading("Inventory", "Starter ingredients for your menu. Update stock and costs to match your kitchen.", `<button class="button" data-action="new-inventory-item">＋ Add ingredient</button>`)}
-    <section class="data-panel">${rows ? `<div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Current stock</th><th>Unit purchase cost</th><th>Low-stock alert</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyState("▧", "No ingredients tracked", "Add ingredients to start tracking stock.")}</section>`;
+  const rows = data.inventory.map((i) => `<tr><td class="cell-strong">${escapeHtml(i.name)}<span class="cell-sub">${escapeHtml(i.category)}</span></td><td>${escapeHtml(i.stock)} ${escapeHtml(i.unit)}</td><td>${hasCost(i.unitCost) ? `${money(i.unitCost)} / ${escapeHtml(i.unit)}` : "Not set"}</td><td>${escapeHtml(i.minimum)} ${escapeHtml(i.unit)}</td><td>${Number(i.stock) <= Number(i.minimum) ? `<span class="badge cancelled">Low stock</span>` : `<span class="badge completed">In stock</span>`}</td><td><button class="button secondary small" data-action="restock" data-id="${escapeHtml(i.id)}">＋ Restock</button></td></tr>`).join("");
+  return `${heading("Inventory", "Starter ingredients for your menu. Update stock and costs to match your kitchen.", `<button class="button" data-action="new-inventory-item">＋ Add ingredient</button>`)}<section class="data-panel">${rows ? `<div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Current stock</th><th>Unit purchase cost</th><th>Low-stock alert</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyState("▧", "No ingredients tracked", "Add ingredients to start tracking stock.")}</section>`;
 }
 
 function renderReports() {
-  const financials = getTodayFinancials();
-  const orders = getTodayOrders().filter((order) => order.status !== "Cancelled");
-  const revenue = financials.revenue;
-  const unitsSold = orders.reduce((sum, order) => sum + getOrderItems(order)
-    .reduce((itemSum, item) => itemSum + Number(item.qty), 0), 0);
-  const paymentTotal = (method) => orders.filter((order) => order.payment === method).reduce((sum, order) => sum + Number(order.total), 0);
-  const salesByItem = new Map();
-  orders.forEach((order) => {
-    getOrderItems(order).forEach((orderItem) => {
-      const sale = salesByItem.get(orderItem.name) || {
-        name: orderItem.name, qty: 0, revenue: 0, costOfGoods: 0, costKnown: true
-      };
-      sale.qty += Number(orderItem.qty);
-      sale.revenue += Number(orderItem.unitPrice) * Number(orderItem.qty);
-      if (hasCost(orderItem.unitCost)) {
-        sale.costOfGoods += Number(orderItem.unitCost) * Number(orderItem.qty);
-      } else {
-        sale.costKnown = false;
-      }
-      salesByItem.set(orderItem.name, sale);
-    });
-  });
-  const sales = [...salesByItem.values()].map((sale) => ({
-    ...sale,
-    emoji: data.menu.find((item) => item.name === sale.name)?.emoji || "🍽️"
-  })).sort((a, b) => b.qty - a.qty);
-  const purchases = (data.purchases || []).filter((purchase) => purchase.day === todayKey());
-  const purchaseRows = [...purchases].reverse().map((purchase) => `<tr><td class="cell-strong">${escapeHtml(purchase.name)}</td><td>${escapeHtml(purchase.quantity)} ${escapeHtml(purchase.unit)}</td><td>${money(purchase.unitCost)} / ${escapeHtml(purchase.unit)}</td><td>${escapeHtml(purchase.time)}</td><td class="cell-strong">${money(purchase.total)}</td></tr>`).join("");
+  const f = getTodayFinancials(), orders = getTodayOrders().filter((o) => o.status !== "Cancelled"), byItem = new Map();
+  let units = 0;
+  orders.forEach((o) => getOrderItems(o).forEach((i) => {
+    units += Number(i.qty);
+    const s = byItem.get(i.name) || { name: i.name, qty: 0, revenue: 0, costOfGoods: 0, costKnown: true };
+    s.qty += Number(i.qty); s.revenue += Number(i.unitPrice) * Number(i.qty);
+    if (hasCost(i.unitCost)) s.costOfGoods += Number(i.unitCost) * Number(i.qty); else s.costKnown = false;
+    byItem.set(i.name, s);
+  }));
+  const sales = [...byItem.values()].map((s) => ({ ...s, emoji: data.menu.find((m) => m.name === s.name)?.emoji || "🍽️" })).sort((a, b) => b.qty - a.qty);
+  const payTot = (m) => orders.filter((o) => o.payment === m).reduce((s, o) => s + Number(o.total), 0);
+  const purch = (data.purchases || []).filter((p) => p.day === todayKey());
+  const pRows = [...purch].reverse().map((p) => `<tr><td class="cell-strong">${escapeHtml(p.name)}</td><td>${escapeHtml(p.quantity)} ${escapeHtml(p.unit)}</td><td>${money(p.unitCost)} / ${escapeHtml(p.unit)}</td><td>${escapeHtml(p.time)}</td><td class="cell-strong">${money(p.total)}</td></tr>`).join("");
   return `${heading("Sales & reports", "A quick look at today's canteen performance.")}
     <div class="report-summary">
-      <article class="report-card"><span>Today's sales</span><strong>${money(revenue)}</strong><small>From ${orders.length} completed and active orders</small></article>
-      <article class="report-card"><span>Today's stock purchases</span><strong>${money(financials.purchaseSpend)}</strong><small>Across ${purchases.length} stock purchases</small></article>
-      <article class="report-card"><span>Cost of items sold</span><strong>${money(financials.costOfGoods)}</strong><small>Based on each menu item's prep cost</small></article>
-      <article class="report-card profit-card"><span>Today's gross profit</span><strong>${financials.grossProfit === null ? "—" : money(financials.grossProfit)}</strong><small>${financials.unknownCostOrders ? `Missing cost on ${financials.unknownCostOrders} order(s)` : "Sales minus preparation costs"}</small></article>
-      <article class="report-card"><span>Sales less stock purchases</span><strong>${money(revenue - financials.purchaseSpend)}</strong><small>Today's recorded sales minus inventory buys</small></article>
-      <article class="report-card"><span>Items sold</span><strong>${unitsSold}</strong><small>Across ${sales.length} menu items</small></article>
-      <article class="report-card"><span>Average order value</span><strong>${money(orders.length ? Math.round(revenue / orders.length) : 0)}</strong><small>Based on today's orders</small></article>
+      <article class="report-card"><span>Today's sales</span><strong>${money(f.revenue)}</strong><small>From ${orders.length} completed and active orders</small></article>
+      <article class="report-card"><span>Today's stock purchases</span><strong>${money(f.purchaseSpend)}</strong><small>Across ${purch.length} stock purchases</small></article>
+      <article class="report-card"><span>Cost of items sold</span><strong>${money(f.costOfGoods)}</strong><small>Based on each menu item's prep cost</small></article>
+      <article class="report-card profit-card"><span>Today's gross profit</span><strong>${f.grossProfit === null ? "—" : money(f.grossProfit)}</strong><small>${f.unknownCostOrders ? `Missing cost on ${f.unknownCostOrders} order(s)` : "Sales minus preparation costs"}</small></article>
+      <article class="report-card"><span>Sales less stock purchases</span><strong>${money(f.revenue - f.purchaseSpend)}</strong><small>Today's recorded sales minus inventory buys</small></article>
+      <article class="report-card"><span>Items sold</span><strong>${units}</strong><small>Across ${sales.length} menu items</small></article>
+      <article class="report-card"><span>Average order value</span><strong>${money(orders.length ? Math.round(f.revenue / orders.length) : 0)}</strong><small>Based on today's orders</small></article>
     </div>
     <div class="dashboard-grid">
-      <section class="panel"><div class="panel-header"><h2>Sales by menu item</h2><span class="category-tag">Today</span></div>
-        ${sales.length ? `<div class="table-wrap"><table class="report-table"><thead><tr><th>Item</th><th>Units sold</th><th>Sales</th><th>Prep cost</th><th>Profit</th></tr></thead><tbody>${sales.map((item) => `<tr><td class="cell-strong">${escapeHtml(item.emoji)} &nbsp;${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${money(item.revenue)}</td><td>${item.costKnown ? money(item.costOfGoods) : "—"}</td><td class="cell-strong">${item.costKnown ? money(item.revenue - item.costOfGoods) : "—"}</td></tr>`).join("")}</tbody></table></div>` : emptyState("↗", "No sales yet", "Sales will appear once orders are placed.")}
-      </section>
-      <section class="panel"><div class="panel-header"><h2>Payment breakdown</h2><span class="category-tag">Today</span></div>
-        <div class="popular-list"><div class="popular-item"><span class="food-emoji">📱</span><div><div class="popular-name">UPI</div><div class="popular-meta">${orders.filter((order) => order.payment === "UPI").length} orders</div></div><span class="popular-sales">${money(paymentTotal("UPI"))}</span></div><div class="popular-item"><span class="food-emoji">💵</span><div><div class="popular-name">Cash</div><div class="popular-meta">${orders.filter((order) => order.payment === "Cash").length} orders</div></div><span class="popular-sales">${money(paymentTotal("Cash"))}</span></div><div class="popular-item"><span class="food-emoji">💳</span><div><div class="popular-name">Card</div><div class="popular-meta">${orders.filter((order) => order.payment === "Card").length} orders</div></div><span class="popular-sales">${money(paymentTotal("Card"))}</span></div></div>
-      </section>
+      <section class="panel"><div class="panel-header"><h2>Sales by menu item</h2><span class="category-tag">Today</span></div>${sales.length ? `<div class="table-wrap"><table class="report-table"><thead><tr><th>Item</th><th>Units sold</th><th>Sales</th><th>Prep cost</th><th>Profit</th></tr></thead><tbody>${sales.map((s) => `<tr><td class="cell-strong">${escapeHtml(s.emoji)} &nbsp;${escapeHtml(s.name)}</td><td>${s.qty}</td><td>${money(s.revenue)}</td><td>${s.costKnown ? money(s.costOfGoods) : "—"}</td><td class="cell-strong">${s.costKnown ? money(s.revenue - s.costOfGoods) : "—"}</td></tr>`).join("")}</tbody></table></div>` : emptyState("↗", "No sales yet", "Sales will appear once orders are placed.")}</section>
+      <section class="panel"><div class="panel-header"><h2>Payment breakdown</h2><span class="category-tag">Today</span></div><div class="popular-list">${[["📱","UPI"],["💵","Cash"],["💳","Card"]].map(([e, m]) => `<div class="popular-item"><span class="food-emoji">${e}</span><div><div class="popular-name">${m}</div><div class="popular-meta">${orders.filter((o) => o.payment === m).length} orders</div></div><span class="popular-sales">${money(payTot(m))}</span></div>`).join("")}</div></section>
     </div>
-    <section class="panel purchase-panel"><div class="panel-header"><h2>Stock purchases today</h2><span class="category-tag">Total ${money(financials.purchaseSpend)}</span></div>
-      ${purchaseRows ? `<div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Quantity</th><th>Cost per unit</th><th>Time</th><th>Total spent</th></tr></thead><tbody>${purchaseRows}</tbody></table></div>` : emptyState("▧", "No stock purchases today", "Restock inventory to record purchase costs here.")}
-    </section>
+    <section class="panel purchase-panel"><div class="panel-header"><h2>Stock purchases today</h2><span class="category-tag">Total ${money(f.purchaseSpend)}</span></div>${pRows ? `<div class="table-wrap"><table><thead><tr><th>Ingredient</th><th>Quantity</th><th>Cost per unit</th><th>Time</th><th>Total spent</th></tr></thead><tbody>${pRows}</tbody></table></div>` : emptyState("▧", "No stock purchases today", "Restock inventory to record purchase costs here.")}</section>
     <p class="report-note">Gross profit is sales minus the recorded cost to prepare items sold. Stock purchases are tracked separately and may include ingredients still in inventory.</p>`;
 }
 
-function renderNotifications() {
-  if (window.CanteenNotifications) {
-    return window.CanteenNotifications.renderNotificationsView();
-  }
-  return emptyState("🔔", "Notifications unavailable", "Could not load the notifications module.");
-}
-
-function updateNotificationBadge() {
-  const badge = document.querySelector("#nav-notif-count");
-  if (!badge || !window.CanteenNotifications) return;
-  const count = window.CanteenNotifications.getUnreadCount();
-  badge.textContent = count;
-  badge.classList.toggle("has-unread", count > 0);
-}
+const renderNotifications = () => window.CanteenNotifications ? window.CanteenNotifications.renderNotificationsView() : emptyState("🔔", "Notifications unavailable", "Could not load the notifications module.");
+function updateNotificationBadge() { const b = document.querySelector("#nav-notif-count"); if (!b || !window.CanteenNotifications) return; const c = window.CanteenNotifications.getUnreadCount(); b.textContent = c; b.classList.toggle("has-unread", c > 0); }
 
 function renderPage() {
-  const renderers = {
-    overview: renderOverview,
-    orders: renderOrders,
-    notifications: renderNotifications,
-    menu: renderMenu,
-    inventory: renderInventory,
-    reports: renderReports
-  };
-  pageContent.innerHTML = renderers[activePage]();
-  document.querySelector("#nav-order-count").textContent = data.orders.filter((order) => ["Preparing", "Ready"].includes(order.status)).length;
+  const map = { overview: renderOverview, orders: renderOrders, notifications: renderNotifications, menu: renderMenu, inventory: renderInventory, reports: renderReports };
+  pageContent.innerHTML = map[activePage]();
+  document.querySelector("#nav-order-count").textContent = data.orders.filter((o) => ["Preparing", "Ready"].includes(o.status)).length;
   updateNotificationBadge();
-  if (activePage === "orders") {
-    renderOrdersTable();
-    document.querySelector("#order-search").addEventListener("input", renderOrdersTable);
-    document.querySelector("#order-status").addEventListener("change", renderOrdersTable);
-  }
-  if (activePage === "menu") {
-    wireMenuCarousels();
-  }
+  if (activePage === "orders") { renderOrdersTable(); document.querySelector("#order-search").addEventListener("input", renderOrdersTable); document.querySelector("#order-status").addEventListener("change", renderOrdersTable); }
+  if (activePage === "menu") wireMenuCarousels();
 }
 
-function openModal(title, subtitle, fields, submitLabel, onSubmit, modalClass = "") {
-  modal.className = `modal ${modalClass}`.trim();
+function openModal(title, subtitle, fields, submitLabel, onSubmit, cls = "") {
+  modal.className = `modal ${cls}`.trim();
   modal.innerHTML = `<div class="modal-header"><div><h2 id="modal-title">${escapeHtml(title)}</h2><p>${escapeHtml(subtitle)}</p></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><form id="modal-form"><div class="form-grid">${fields}</div><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Cancel</button><button class="button" type="submit">${escapeHtml(submitLabel)}</button></div></form>`;
-  modalBackdrop.hidden = false;
-  const firstInput = modal.querySelector("input, select");
-  if (firstInput) firstInput.focus();
-  modal.querySelector("#modal-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    if (onSubmit(formData)) closeModal();
-  });
+  modalBackdrop.hidden = false; modal.querySelector("input, select")?.focus();
+  modal.querySelector("#modal-form").addEventListener("submit", (e) => { e.preventDefault(); if (onSubmit(new FormData(e.currentTarget))) closeModal(); });
 }
-
-function closeModal() {
-  modalBackdrop.hidden = true;
-  modal.innerHTML = "";
-  modal.className = "modal";
-}
-
+function closeModal() { modalBackdrop.hidden = true; modal.innerHTML = ""; modal.className = "modal"; }
 function updateOrderEstimate() {
-  const estimate = modal.querySelector("#order-estimate");
-  if (!estimate) return;
-  const total = [...modal.querySelectorAll("[data-order-line]")].reduce((sum, row) => {
-    const item = data.menu.find((entry) => entry.id === row.querySelector('[name="item"]').value);
-    const quantity = Number(row.querySelector('[name="qty"]').value);
-    return item && Number.isFinite(quantity) && quantity > 0
-      ? sum + item.price * quantity
-      : sum;
-  }, 0);
-  estimate.textContent = money(total);
+  const el = modal.querySelector("#order-estimate"); if (!el) return;
+  el.textContent = money([...modal.querySelectorAll("[data-order-line]")].reduce((s, r) => {
+    const it = data.menu.find((e) => e.id === r.querySelector('[name="item"]').value), q = Number(r.querySelector('[name="qty"]').value);
+    return it && Number.isFinite(q) && q > 0 ? s + it.price * q : s;
+  }, 0));
 }
-
-function addPurchase(item, quantity, unitCost) {
-  const now = new Date();
-  data.purchases.push({
-    id: `p${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: item.name,
-    quantity,
-    unit: item.unit,
-    unitCost,
-    total: quantity * unitCost,
-    day: todayKey(),
-    time: now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-  });
-}
+function addPurchase(item, qty, unitCost) { data.purchases.push({ id: `p${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: item.name, quantity: qty, unit: item.unit, unitCost, total: qty * unitCost, day: todayKey(), time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }); }
+const orderLineHtml = (idx) => `<div class="order-line" data-order-line><div class="field"><label for="order-item-${idx}">Menu item</label><select id="order-item-${idx}" name="item" required>${data.menu.map((i) => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)} — ${money(i.price)}${hasCost(i.costPerServing) ? ` (cost ${money(i.costPerServing)})` : " (cost not set)"}</option>`).join("")}</select></div><div class="field"><label for="order-qty-${idx}">Quantity</label><input id="order-qty-${idx}" name="qty" type="number" min="1" max="99" value="1" required></div><button class="icon-button order-remove" type="button" data-action="remove-order-item" aria-label="Remove item" title="Remove item">×</button></div>`;
 
 function newOrderModal() {
-  if (!data.menu.length) {
-    showToast("Add a menu item before creating an order.");
-    return;
-  }
-  const options = data.menu.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} — ${money(item.price)}${hasCost(item.costPerServing) ? ` (cost ${money(item.costPerServing)})` : " (cost not set)"}</option>`).join("");
-  const lineRow = (index) => `<div class="order-line" data-order-line><div class="field"><label for="order-item-${index}">Menu item</label><select id="order-item-${index}" name="item" required>${options}</select></div><div class="field"><label for="order-qty-${index}">Quantity</label><input id="order-qty-${index}" name="qty" type="number" min="1" max="99" value="1" required></div><button class="icon-button order-remove" type="button" data-action="remove-order-item" aria-label="Remove item" title="Remove item">×</button></div>`;
-  openModal("Create a new order", "Add multiple dishes and set a quantity for each.", `
-    <div class="field"><label for="customer">Customer name</label><input id="customer" name="customer" required maxlength="60" placeholder="e.g. Ananya Shah"></div>
-    <div class="order-items" id="order-items">${lineRow(1)}</div>
-    <div class="order-controls"><button class="button secondary small" type="button" data-action="add-order-item">＋ Add another item</button><strong>Order total: <span id="order-estimate">${money(data.menu[0].price)}</span></strong></div>
-    <div class="field"><label for="payment">Payment method</label><select id="payment" name="payment"><option>UPI</option><option>Cash</option><option>Card</option></select></div>`, "Place order", (formData) => {
-      const itemIds = formData.getAll("item");
-      const quantities = formData.getAll("qty");
-      const items = itemIds.map((itemId, index) => {
-        const menuItem = data.menu.find((entry) => entry.id === itemId);
-        const quantity = Number(quantities[index]);
-        if (!menuItem || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) return null;
-        return {
-          name: menuItem.name,
-          qty: quantity,
-          unitPrice: Number(menuItem.price),
-          unitCost: hasCost(menuItem.costPerServing) ? Number(menuItem.costPerServing) : null
-        };
-      });
-      if (!items.length || items.some((item) => item === null)) {
-        showToast("Check each selected item and its quantity.");
-        return false;
-      }
-      const now = new Date();
-      const nextId = String(Math.max(1000, ...data.orders.map((order) => Number(order.id) || 0)) + 1);
-      data.orders.unshift({
-        id: nextId,
-        customer: String(formData.get("customer")).trim(),
-        items,
-        total: items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0),
-        status: "Preparing", time: now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-        payment: String(formData.get("payment")), day: todayKey()
-      });
-      if (!saveData()) {
-        data.orders.shift();
-        return false;
-      }
-      renderPage();
-      showToast(`Order #${nextId} placed successfully.`);
-      return true;
+  if (!data.menu.length) return showToast("Add a menu item before creating an order.");
+  openModal("Create a new order", "Add multiple dishes and set a quantity for each.",
+    `<div class="field"><label for="customer">Customer name</label><input id="customer" name="customer" required maxlength="60" placeholder="e.g. Ananya Shah"></div><div class="order-items" id="order-items">${orderLineHtml(1)}</div><div class="order-controls"><button class="button secondary small" type="button" data-action="add-order-item">＋ Add another item</button><strong>Order total: <span id="order-estimate">${money(data.menu[0].price)}</span></strong></div><div class="field"><label for="payment">Payment method</label><select id="payment" name="payment"><option>UPI</option><option>Cash</option><option>Card</option></select></div>`,
+    "Place order", (fd) => {
+      const ids = fd.getAll("item"), qtys = fd.getAll("qty");
+      const items = ids.map((id, i) => { const m = data.menu.find((x) => x.id === id), q = Number(qtys[i]); return m && Number.isInteger(q) && q >= 1 && q <= 99 ? { name: m.name, qty: q, unitPrice: Number(m.price), unitCost: hasCost(m.costPerServing) ? Number(m.costPerServing) : null } : null; });
+      if (!items.length || items.includes(null)) { showToast("Check each selected item and its quantity."); return false; }
+      const nextId = String(Math.max(1000, ...data.orders.map((o) => Number(o.id) || 0)) + 1);
+      data.orders.unshift({ id: nextId, customer: String(fd.get("customer")).trim(), items, total: items.reduce((s, i) => s + i.unitPrice * i.qty, 0), status: "Preparing", time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }), payment: String(fd.get("payment")), day: todayKey() });
+      if (!saveData()) { data.orders.shift(); return false; }
+      renderPage(); showToast(`Order #${nextId} placed successfully.`); return true;
     }, "order-modal");
-  modal.addEventListener("input", updateOrderEstimate);
-  modal.addEventListener("change", updateOrderEstimate);
+  modal.addEventListener("input", updateOrderEstimate); modal.addEventListener("change", updateOrderEstimate);
 }
-
-function addOrderItemRow() {
-  const container = modal.querySelector("#order-items");
-  if (!container) return;
-  const index = container.querySelectorAll("[data-order-line]").length + 1;
-  const options = data.menu.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} — ${money(item.price)}${hasCost(item.costPerServing) ? ` (cost ${money(item.costPerServing)})` : " (cost not set)"}</option>`).join("");
-  container.insertAdjacentHTML("beforeend", `<div class="order-line" data-order-line><div class="field"><label for="order-item-${index}">Menu item</label><select id="order-item-${index}" name="item" required>${options}</select></div><div class="field"><label for="order-qty-${index}">Quantity</label><input id="order-qty-${index}" name="qty" type="number" min="1" max="99" value="1" required></div><button class="icon-button order-remove" type="button" data-action="remove-order-item" aria-label="Remove item" title="Remove item">×</button></div>`);
-  updateOrderEstimate();
-}
-
-function newMenuItemModal() {
-  openModal("Add a menu item", "Add a dish or drink to your canteen menu.", `
-    <div class="field"><label for="item-name">Item name</label><input id="item-name" name="name" required maxlength="50" placeholder="e.g. Vegetable Pulao"></div>
-    <div class="form-row"><div class="field"><label for="item-price">Selling price (₹)</label><input id="item-price" name="price" type="number" min="1" max="100000" required placeholder="80"></div><div class="field"><label for="item-cost">Cost to prepare (₹)</label><input id="item-cost" name="costPerServing" type="number" min="0" max="100000" step="0.01" required placeholder="35"></div></div>
-    <div class="field"><label for="item-category">Category</label><select id="item-category" name="category"><option>Breakfast</option><option>Meals</option><option>Non-Veg</option><option>Snacks</option><option>Drinks</option><option>Desserts</option></select></div>
-    <div class="field"><label for="item-description">Description</label><input id="item-description" name="description" maxlength="100" placeholder="A short description (optional)"></div>`, "Add to menu", (formData) => {
-      const name = String(formData.get("name")).trim();
-      if (!name) return false;
-      data.menu.push({
-        id: `m${Date.now()}`, name, price: Number(formData.get("price")),
-        costPerServing: Number(formData.get("costPerServing")),
-        category: String(formData.get("category")), emoji: "🍽️",
-        description: String(formData.get("description")).trim()
-      });
-      if (!saveData()) {
-        data.menu.pop();
-        return false;
-      }
-      renderPage();
-      showToast(`${name} added to the menu.`);
-      return true;
+function menuModal(item = null) {
+  const cats = ["Breakfast", "Meals", "Non-Veg", "Snacks", "Drinks", "Desserts"];
+  openModal(item ? "Edit menu item" : "Add a menu item", item ? "Update the selling price and preparation cost." : "Add a dish or drink to your canteen menu.",
+    `<div class="field"><label for="item-name">Item name</label><input id="item-name" name="name" required maxlength="50" value="${escapeHtml(item?.name || "")}" placeholder="e.g. Vegetable Pulao"></div><div class="form-row"><div class="field"><label for="item-price">Selling price (₹)</label><input id="item-price" name="price" type="number" min="1" max="100000" required value="${escapeHtml(item?.price ?? "")}" placeholder="80"></div><div class="field"><label for="item-cost">Cost to prepare (₹)</label><input id="item-cost" name="costPerServing" type="number" min="0" max="100000" step="0.01" required value="${hasCost(item?.costPerServing) ? escapeHtml(item.costPerServing) : ""}" placeholder="35"></div></div><div class="field"><label for="item-category">Category</label><select id="item-category" name="category">${cats.map((c) => `<option${item?.category === c ? " selected" : ""}>${c}</option>`).join("")}</select></div><div class="field"><label for="item-description">Description</label><input id="item-description" name="description" maxlength="100" value="${escapeHtml(item?.description || "")}" placeholder="A short description (optional)"></div>`,
+    item ? "Save changes" : "Add to menu", (fd) => {
+      const name = String(fd.get("name")).trim(); if (!name) return false;
+      const fields = { name, price: Number(fd.get("price")), costPerServing: Number(fd.get("costPerServing")), category: String(fd.get("category")), description: String(fd.get("description")).trim() };
+      if (item) { const prev = { ...item }; Object.assign(item, fields); if (!saveData()) { Object.assign(item, prev); return false; } renderPage(); showToast(`${item.name} updated.`); return true; }
+      data.menu.push({ id: `m${Date.now()}`, emoji: "🍽️", ...fields });
+      if (!saveData()) { data.menu.pop(); return false; } renderPage(); showToast(`${name} added to the menu.`); return true;
     });
 }
-
-function editMenuItemModal(id) {
-  const item = data.menu.find((entry) => entry.id === id);
-  if (!item) return;
-  const categories = ["Breakfast", "Meals", "Non-Veg", "Snacks", "Drinks", "Desserts"];
-  openModal("Edit menu item", "Update the selling price and preparation cost.", `
-    <div class="field"><label for="item-name">Item name</label><input id="item-name" name="name" required maxlength="50" value="${escapeHtml(item.name)}"></div>
-    <div class="form-row"><div class="field"><label for="item-price">Selling price (₹)</label><input id="item-price" name="price" type="number" min="1" max="100000" required value="${escapeHtml(item.price)}"></div><div class="field"><label for="item-cost">Cost to prepare (₹)</label><input id="item-cost" name="costPerServing" type="number" min="0" max="100000" step="0.01" required value="${hasCost(item.costPerServing) ? escapeHtml(item.costPerServing) : ""}" placeholder="Enter cost"></div></div>
-    <div class="field"><label for="item-category">Category</label><select id="item-category" name="category">${categories.map((category) => `<option${item.category === category ? " selected" : ""}>${category}</option>`).join("")}</select></div>
-    <div class="field"><label for="item-description">Description</label><input id="item-description" name="description" maxlength="100" value="${escapeHtml(item.description || "")}"></div>`, "Save changes", (formData) => {
-      const previous = { ...item };
-      item.name = String(formData.get("name")).trim();
-      item.price = Number(formData.get("price"));
-      item.costPerServing = Number(formData.get("costPerServing"));
-      item.category = String(formData.get("category"));
-      item.description = String(formData.get("description")).trim();
-      if (!saveData()) {
-        Object.assign(item, previous);
-        return false;
-      }
-      renderPage();
-      showToast(`${item.name} updated.`);
-      return true;
-    });
-}
-
 function newInventoryModal() {
-  openModal("Add an ingredient", "Start tracking an ingredient in your stock.", `
-    <div class="field"><label for="ingredient-name">Ingredient name</label><input id="ingredient-name" name="name" required maxlength="50" placeholder="e.g. Tomatoes"></div>
-    <div class="form-row"><div class="field"><label for="ingredient-stock">Starting stock</label><input id="ingredient-stock" name="stock" type="number" min="0" step="0.1" required value="0"></div><div class="field"><label for="ingredient-unit">Unit</label><select id="ingredient-unit" name="unit"><option>kg</option><option>L</option><option>pcs</option><option>pack</option></select></div></div>
-    <div class="field"><label for="ingredient-cost">Purchase cost per unit (₹)</label><input id="ingredient-cost" name="unitCost" type="number" min="0.01" max="100000" step="0.01" required placeholder="e.g. 40"></div>
-    <div class="form-row"><div class="field"><label for="ingredient-minimum">Low-stock alert at</label><input id="ingredient-minimum" name="minimum" type="number" min="0" step="0.1" required value="5"></div><div class="field"><label for="ingredient-category">Category</label><select id="ingredient-category" name="category"><option>Produce</option><option>Grains</option><option>Dairy</option><option>Meat &amp; seafood</option><option>Bakery</option><option>Essentials</option><option>Beverages</option><option>Other</option></select></div></div>`, "Add ingredient", (formData) => {
-      const name = String(formData.get("name")).trim();
-      if (!name) return false;
-      const item = {
-        id: `i${Date.now()}`, name, stock: Number(formData.get("stock")),
-        unit: String(formData.get("unit")), minimum: Number(formData.get("minimum")),
-        unitCost: Number(formData.get("unitCost")),
-        category: String(formData.get("category"))
-      };
-      data.inventory.push(item);
-      if (item.stock > 0) addPurchase(item, item.stock, item.unitCost);
-      if (!saveData()) {
-        data.inventory.pop();
-        if (item.stock > 0) data.purchases.pop();
-        return false;
-      }
-      renderPage();
-      showToast(`${name} added to inventory.`);
-      return true;
+  openModal("Add an ingredient", "Start tracking an ingredient in your stock.",
+    `<div class="field"><label for="ingredient-name">Ingredient name</label><input id="ingredient-name" name="name" required maxlength="50" placeholder="e.g. Tomatoes"></div><div class="form-row"><div class="field"><label for="ingredient-stock">Starting stock</label><input id="ingredient-stock" name="stock" type="number" min="0" step="0.1" required value="0"></div><div class="field"><label for="ingredient-unit">Unit</label><select id="ingredient-unit" name="unit"><option>kg</option><option>L</option><option>pcs</option><option>pack</option></select></div></div><div class="field"><label for="ingredient-cost">Purchase cost per unit (₹)</label><input id="ingredient-cost" name="unitCost" type="number" min="0.01" max="100000" step="0.01" required placeholder="e.g. 40"></div><div class="form-row"><div class="field"><label for="ingredient-minimum">Low-stock alert at</label><input id="ingredient-minimum" name="minimum" type="number" min="0" step="0.1" required value="5"></div><div class="field"><label for="ingredient-category">Category</label><select id="ingredient-category" name="category"><option>Produce</option><option>Grains</option><option>Dairy</option><option>Meat &amp; seafood</option><option>Bakery</option><option>Essentials</option><option>Beverages</option><option>Other</option></select></div></div>`,
+    "Add ingredient", (fd) => {
+      const name = String(fd.get("name")).trim(); if (!name) return false;
+      const item = { id: `i${Date.now()}`, name, stock: Number(fd.get("stock")), unit: String(fd.get("unit")), minimum: Number(fd.get("minimum")), unitCost: Number(fd.get("unitCost")), category: String(fd.get("category")) };
+      data.inventory.push(item); if (item.stock > 0) addPurchase(item, item.stock, item.unitCost);
+      if (!saveData()) { data.inventory.pop(); if (item.stock > 0) data.purchases.pop(); return false; }
+      renderPage(); showToast(`${name} added to inventory.`); return true;
     });
 }
-
 function restockModal(id) {
-  const item = data.inventory.find((entry) => entry.id === id);
-  if (!item) return;
-  openModal(`Restock ${item.name}`, `Current stock: ${item.stock} ${item.unit}.`, `
-    <div class="field"><label for="restock-quantity">Quantity to add (${escapeHtml(item.unit)})</label><input id="restock-quantity" name="quantity" type="number" min="0.1" step="0.1" required placeholder="Enter quantity"></div>
-    <div class="field"><label for="restock-unit-cost">Purchase cost per ${escapeHtml(item.unit)} (₹)</label><input id="restock-unit-cost" name="unitCost" type="number" min="0.01" max="100000" step="0.01" required value="${hasCost(item.unitCost) ? escapeHtml(item.unitCost) : ""}" placeholder="Enter purchase cost"></div>`, "Record purchase", (formData) => {
-      const quantity = Number(formData.get("quantity"));
-      const unitCost = Number(formData.get("unitCost"));
-      if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitCost) || unitCost <= 0) return false;
-      const previousStock = Number(item.stock);
-      const previousCost = item.unitCost;
-      item.stock = Number(item.stock) + quantity;
-      item.unitCost = unitCost;
-      addPurchase(item, quantity, unitCost);
-      if (!saveData()) {
-        item.stock = previousStock;
-        item.unitCost = previousCost;
-        data.purchases.pop();
-        return false;
-      }
-      renderPage();
-      showToast(`${item.name} stock updated.`);
-      return true;
+  const it = data.inventory.find((e) => e.id === id); if (!it) return;
+  openModal(`Restock ${it.name}`, `Current stock: ${it.stock} ${it.unit}.`,
+    `<div class="field"><label for="restock-quantity">Quantity to add (${escapeHtml(it.unit)})</label><input id="restock-quantity" name="quantity" type="number" min="0.1" step="0.1" required placeholder="Enter quantity"></div><div class="field"><label for="restock-unit-cost">Purchase cost per ${escapeHtml(it.unit)} (₹)</label><input id="restock-unit-cost" name="unitCost" type="number" min="0.01" max="100000" step="0.01" required value="${hasCost(it.unitCost) ? escapeHtml(it.unitCost) : ""}" placeholder="Enter purchase cost"></div>`,
+    "Record purchase", (fd) => {
+      const q = Number(fd.get("quantity")), uc = Number(fd.get("unitCost")); if (!(q > 0 && uc > 0)) return false;
+      const ps = Number(it.stock), pc = it.unitCost; it.stock = ps + q; it.unitCost = uc; addPurchase(it, q, uc);
+      if (!saveData()) { it.stock = ps; it.unitCost = pc; data.purchases.pop(); return false; }
+      renderPage(); showToast(`${it.name} stock updated.`); return true;
     });
 }
 
-document.addEventListener("click", (event) => {
-  const pageButton = event.target.closest("[data-page]");
-  if (pageButton) {
-    setPage(pageButton.dataset.page);
-    return;
-  }
-  const actionButton = event.target.closest("[data-action]");
-  if (!actionButton) return;
-  const { action, id } = actionButton.dataset;
+document.addEventListener("click", (e) => {
+  const pb = e.target.closest("[data-page]"); if (pb) return setPage(pb.dataset.page);
+  const ab = e.target.closest("[data-action]"); if (!ab) return;
+  const { action, id } = ab.dataset;
   if (action === "new-order") newOrderModal();
-  if (action === "add-order-item") addOrderItemRow();
-  if (action === "remove-order-item") {
-    const row = actionButton.closest("[data-order-line]");
-    const container = modal.querySelector("#order-items");
-    if (row && container.querySelectorAll("[data-order-line]").length > 1) {
-      row.remove();
-      updateOrderEstimate();
+  else if (action === "add-order-item") { const c = modal.querySelector("#order-items"); if (c) { c.insertAdjacentHTML("beforeend", orderLineHtml(c.querySelectorAll("[data-order-line]").length + 1)); updateOrderEstimate(); } }
+  else if (action === "remove-order-item") { const c = modal.querySelector("#order-items"), r = ab.closest("[data-order-line]"); if (r && c.querySelectorAll("[data-order-line]").length > 1) { r.remove(); updateOrderEstimate(); } else showToast("An order needs at least one item."); }
+  else if (action === "new-menu-item") menuModal();
+  else if (action === "edit-menu") menuModal(data.menu.find((x) => x.id === id));
+  else if (action === "menu-slide-img") updateMenuCardPhoto(id, (menuPhotoIdx.get(id) || 0) + Number(ab.dataset.delta || 1));
+  else if (action === "menu-dot-img") updateMenuCardPhoto(id, Number(ab.dataset.index || 0));
+  else if (action === "new-inventory-item") newInventoryModal();
+  else if (action === "close-modal") closeModal();
+  else if (action === "restock") restockModal(id);
+  else if (action === "advance-order") {
+    const o = data.orders.find((x) => x.id === id); if (!o) return;
+    const nx = o.status === "Preparing" ? "Ready" : o.status === "Ready" ? "Completed" : o.status; o.status = nx;
+    if (saveData()) { window.CanteenNotifications?.updateOrderStatus(o.id, nx).then(updateNotificationBadge); renderPage(); showToast(`Order #${o.id} marked ${nx.toLowerCase()}.${nx === "Completed" ? ' User notified: "The delivery coming near to the user".' : ""}`); }
+  } else if (action === "notif-set-status") {
+    const nx = ab.dataset.status; if (!id || !nx) return;
+    const o = data.orders.find((x) => String(x.id) === String(id)); if (o) { o.status = nx; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    window.CanteenNotifications?.updateOrderStatus(id, nx).then(() => { renderPage(); showToast(nx === "Completed" ? `Order #${id} completed! User bell notified: "The delivery coming near to the user".` : `Order #${id} marked ${nx}! Student notified.`); });
+  } else if (action === "notif-filter") { window.CanteenNotifications?.setFilter(ab.dataset.filter || "All"); renderPage(); }
+  else if (action === "notif-mark-all-read") { window.CanteenNotifications?.markAllRead().then(() => { renderPage(); showToast("All order receipt notifications marked as read."); }); }
+  else if (action === "delete-menu") {
+    const it = data.menu.find((x) => x.id === id); if (!it) return;
+    if (data.orders.some((o) => o.status !== "Cancelled" && getOrderItems(o).some((x) => x.name === it.name))) return showToast("This item has order history and can't be removed.");
+    data.menu = data.menu.filter((x) => x.id !== id); if (saveData()) { renderPage(); showToast(`${it.name} removed from the menu.`); }
+  }
+});
+modalBackdrop.addEventListener("click", (e) => { if (e.target === modalBackdrop) closeModal(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modalBackdrop.hidden) closeModal(); });
+document.querySelector("#mobile-menu").addEventListener("click", () => document.querySelector("#sidebar").classList.toggle("open"));
+document.querySelector("#today-label").textContent = new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(new Date());
+document.querySelectorAll(".nav-link").forEach((l) => l.classList.toggle("active", l.dataset.page === activePage));
+const bc = document.querySelector("#breadcrumb-page"); if (bc) bc.textContent = PAGE_TITLES[activePage] || "Overview";
+renderPage(); loadServerData();
+
+window.CanteenNotifications?.startPolling({
+  onSync: ({ adminNotifications, remoteOrders, newlyArrived, changed }) => {
+    let oc = false;
+    if (Array.isArray(remoteOrders)) {
+      if (JSON.stringify(data.orders) !== JSON.stringify(remoteOrders)) { data.orders = remoteOrders; oc = true; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }
     } else {
-      showToast("An order needs at least one item.");
-    }
-  }
-  if (action === "new-menu-item") newMenuItemModal();
-  if (action === "edit-menu") editMenuItemModal(id);
-  if (action === "menu-slide-img") {
-    const delta = Number(actionButton.dataset.delta || 1);
-    const current = menuCardPhotoIndex.get(id) || 0;
-    updateMenuCardPhoto(id, current + delta);
-  }
-  if (action === "menu-dot-img") {
-    const index = Number(actionButton.dataset.index || 0);
-    updateMenuCardPhoto(id, index);
-  }
-  if (action === "new-inventory-item") newInventoryModal();
-  if (action === "close-modal") closeModal();
-  if (action === "restock") restockModal(id);
-  if (action === "advance-order") {
-    const order = data.orders.find((entry) => entry.id === id);
-    if (!order) return;
-    const nextStatus = order.status === "Preparing" ? "Ready" : order.status === "Ready" ? "Completed" : order.status;
-    order.status = nextStatus;
-    if (saveData()) {
-      if (window.CanteenNotifications) {
-        window.CanteenNotifications.updateOrderStatus(order.id, nextStatus).then(() => {
-          updateNotificationBadge();
-        });
-      }
-      renderPage();
-      const extra = nextStatus === "Completed" ? ' User notified: "The delivery coming near to the user".' : "";
-      showToast(`Order #${order.id} marked ${order.status.toLowerCase()}.${extra}`);
-    }
-  }
-  if (action === "notif-set-status") {
-    const nextStatus = actionButton.dataset.status;
-    if (!id || !nextStatus) return;
-    const order = data.orders.find((entry) => String(entry.id) === String(id));
-    if (order) {
-      order.status = nextStatus;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-    if (window.CanteenNotifications) {
-      window.CanteenNotifications.updateOrderStatus(id, nextStatus).then(() => {
-        renderPage();
-        const msg = nextStatus === "Completed"
-          ? `Order #${id} completed! User bell notified: "The delivery coming near to the user".`
-          : `Order #${id} marked ${nextStatus}! Student notified.`;
-        showToast(msg);
+      try { const p = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); if (p && Array.isArray(p.orders) && JSON.stringify(p.orders) !== JSON.stringify(data.orders)) { data.orders = p.orders; oc = true; } } catch {}
+      const ids = new Set(data.orders.map((o) => String(o.id)));
+      (adminNotifications || []).forEach((n) => {
+        if (n?.orderId && !ids.has(String(n.orderId))) {
+          data.orders.unshift({ id: String(n.orderId), customer: n.customerName || "Campus Student", studentAccountName: n.receipt?.studentAccountName || n.customerName || "Campus Student", items: (n.items || []).map((i) => ({ name: i.name, qty: Number(i.qty || 1), unitPrice: Number(i.price ?? i.unitPrice ?? 0), unitCost: Math.round(Number(i.price ?? i.unitPrice ?? 0) * 45) / 100 })), total: Number(n.total || 0), status: n.status || "Preparing", time: new Date(n.createdAt || Date.now()).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }), payment: n.paymentMethod === "UPI" ? "UPI" : "Cash", day: todayKey(), source: "user-web" });
+          ids.add(String(n.orderId)); oc = true;
+        }
       });
+      if (oc) try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
     }
-  }
-  if (action === "notif-filter") {
-    const filter = actionButton.dataset.filter || "All";
-    if (window.CanteenNotifications) {
-      window.CanteenNotifications.setFilter(filter);
-      renderPage();
-    }
-  }
-  if (action === "notif-mark-all-read") {
-    if (window.CanteenNotifications) {
-      window.CanteenNotifications.markAllRead().then(() => {
-        renderPage();
-        showToast("All order receipt notifications marked as read.");
-      });
-    }
-  }
-  if (action === "delete-menu") {
-    const item = data.menu.find((entry) => entry.id === id);
-    if (!item) return;
-    if (data.orders.some((order) =>
-      order.status !== "Cancelled" && getOrderItems(order).some((orderItem) => orderItem.name === item.name)
-    )) {
-      showToast("This item has order history and can't be removed.");
-      return;
-    }
-    data.menu = data.menu.filter((entry) => entry.id !== id);
-    if (saveData()) {
-      renderPage();
-      showToast(`${item.name} removed from the menu.`);
-    }
+    updateNotificationBadge();
+    document.querySelector("#nav-order-count").textContent = data.orders.filter((o) => ["Preparing", "Ready"].includes(o.status)).length;
+    if (newlyArrived.length) showToast(`🔔 New Order Receipt #${newlyArrived[0].orderId} from ${newlyArrived[0].customerName} (${money(newlyArrived[0].total)})!`);
+    if ((changed || oc) && modalBackdrop.hidden) { if (activePage === "notifications" || activePage === "overview") renderPage(); else if (activePage === "orders") renderOrdersTable(); }
   }
 });
-
-modalBackdrop.addEventListener("click", (event) => {
-  if (event.target === modalBackdrop) closeModal();
-});
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !modalBackdrop.hidden) closeModal();
-});
-document.querySelector("#mobile-menu").addEventListener("click", () => {
-  document.querySelector("#sidebar").classList.toggle("open");
-});
-document.querySelector("#today-label").textContent = new Intl.DateTimeFormat("en-IN", {
-  weekday: "short", day: "numeric", month: "short", year: "numeric"
-}).format(new Date());
-
-document.querySelectorAll(".nav-link").forEach((link) => {
-  link.classList.toggle("active", link.dataset.page === activePage);
-});
-const breadcrumbEl = document.querySelector("#breadcrumb-page");
-if (breadcrumbEl) breadcrumbEl.textContent = PAGE_TITLES[activePage] || "Overview";
-
-renderPage();
-loadServerData();
-
-if (window.CanteenNotifications) {
-  window.CanteenNotifications.startPolling({
-    onSync: ({ adminNotifications, remoteOrders, newlyArrived, changed }) => {
-      let ordersChanged = false;
-      if (Array.isArray(remoteOrders)) {
-        const before = JSON.stringify(data.orders);
-        data.orders = remoteOrders;
-        if (JSON.stringify(data.orders) !== before) {
-          ordersChanged = true;
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          } catch {}
-        }
-      } else {
-        // Static / GitHub Pages mode: sync orders from shared localStorage & incoming receipts
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed && Array.isArray(parsed.orders) && JSON.stringify(parsed.orders) !== JSON.stringify(data.orders)) {
-              data.orders = parsed.orders;
-              ordersChanged = true;
-            }
-          }
-        } catch {}
-        if (Array.isArray(adminNotifications) && adminNotifications.length > 0) {
-          const existingIds = new Set(data.orders.map((o) => String(o.id)));
-          for (const n of adminNotifications) {
-            if (n && n.orderId && !existingIds.has(String(n.orderId))) {
-              const items = (Array.isArray(n.items) ? n.items : []).map((it) => ({
-                name: it.name,
-                qty: Number(it.qty || 1),
-                unitPrice: Number(it.price ?? it.unitPrice ?? 0),
-                unitCost: Math.round(Number(it.price ?? it.unitPrice ?? 0) * 45) / 100
-              }));
-              data.orders.unshift({
-                id: String(n.orderId),
-                customer: n.customerName || "Campus Student",
-                studentAccountName: (n.receipt && n.receipt.studentAccountName) || n.customerName || "Campus Student",
-                items,
-                total: Number(n.total || 0),
-                status: n.status || "Preparing",
-                time: new Date(n.createdAt || Date.now()).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-                payment: n.paymentMethod === "UPI" ? "UPI" : "Cash",
-                day: todayKey(),
-                source: "user-web"
-              });
-              existingIds.add(String(n.orderId));
-              ordersChanged = true;
-            }
-          }
-          if (ordersChanged) {
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch {}
-          }
-        }
-      }
-      updateNotificationBadge();
-      document.querySelector("#nav-order-count").textContent = data.orders.filter((order) => ["Preparing", "Ready"].includes(order.status)).length;
-      if (newlyArrived.length > 0) {
-        const latest = newlyArrived[0];
-        showToast(`🔔 New Order Receipt #${latest.orderId} from ${latest.customerName} (${money(latest.total)})!`);
-      }
-      if ((changed || ordersChanged) && modalBackdrop.hidden) {
-        if (activePage === "notifications" || activePage === "overview") {
-          renderPage();
-        } else if (activePage === "orders") {
-          renderOrdersTable();
-        }
-      }
-    }
-  });
-}
