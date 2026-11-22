@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS order_history (order_id TEXT PRIMARY KEY, student_name TEXT NOT NULL, customer_name TEXT NOT NULL, reg_no TEXT NOT NULL DEFAULT '', hostel TEXT NOT NULL DEFAULT '', room_no TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', full_address TEXT NOT NULL DEFAULT '', items_json TEXT NOT NULL, total REAL NOT NULL, payment_method TEXT NOT NULL, payment_status TEXT NOT NULL, estimated_minutes INTEGER NOT NULL DEFAULT 6, status TEXT NOT NULL DEFAULT 'Preparing', receipt_json TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_order_history_student ON order_history(student_name);
+CREATE INDEX IF NOT EXISTS idx_order_history_created ON order_history(created_at);

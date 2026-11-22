@@ -1,4 +1,4 @@
-const STORAGE_KEYS = { USERS: 'campusbite_users_v1', CURRENT_USER: 'campusbite_current_user_v1', BASKET: 'campusbite_basket_v1', ORDERS: 'campusbite_orders_v1', SHARED_CANTEEN_DATA: 'canteenos-data-v1', SHARED_NOTIFICATIONS: 'canteenos-notifications-v1' };
+const STORAGE_KEYS = { USERS: 'campusbite_users_v1', CURRENT_USER: 'campusbite_current_user_v1', BASKET: 'campusbite_basket_v1', ORDERS: 'campusbite_orders_v1', SHARED_CANTEEN_DATA: 'canteenos-data-v1', SHARED_NOTIFICATIONS: 'canteenos-notifications-v1', USERS_DB: 'canteenos-users-db-v1', HISTORY_DB: 'canteenos-order-history-v1' };
 const API_CANDIDATES = ['', 'http://127.0.0.1:8081', 'http://127.0.0.1:8082', 'http://127.0.0.1:8000', 'http://127.0.0.1:8001'];
 let backendApiBase = location.protocol === 'file:' ? 'http://127.0.0.1:8081' : '';
 let backendApiReachable = location.protocol !== 'file:' && !location.hostname.endsWith('.github.io');
@@ -44,12 +44,21 @@ const saveBasket = (items) => { safeWriteJSON(STORAGE_KEYS.BASKET, items); updat
 const getAllOrders = () => safeReadJSON(STORAGE_KEYS.ORDERS, []);
 const getUserOrders = () => state.currentUser ? getAllOrders().filter((o) => (o.studentAccountName || '').toLowerCase() === state.currentUser.name.toLowerCase()) : [];
 
+function syncUserProfileToPublicDb(profile) {
+  const db = safeReadJSON(STORAGE_KEYS.USERS_DB, []);
+  const i = db.findIndex((u) => (u.name || '').toLowerCase() === (profile.name || '').toLowerCase());
+  const safeRec = { id: profile.id || (i >= 0 ? db[i].id : `stu-${Date.now()}`), name: profile.name, email: profile.email || (i >= 0 ? db[i].email : ''), regNo: profile.regNo ?? (i >= 0 ? db[i].regNo : ''), hostel: profile.hostel ?? (i >= 0 ? db[i].hostel : ''), roomNo: profile.roomNo ?? (i >= 0 ? db[i].roomNo : ''), phone: profile.phone ?? (i >= 0 ? db[i].phone : ''), createdAt: profile.createdAt || (i >= 0 ? db[i].createdAt : new Date().toISOString()), lastOrderAt: profile.lastOrderAt ?? (i >= 0 ? db[i].lastOrderAt : '') };
+  if (i >= 0) db[i] = safeRec; else db.unshift(safeRec);
+  safeWriteJSON(STORAGE_KEYS.USERS_DB, db);
+}
+
 function seedDemoStudent() {
   const users = safeReadJSON(STORAGE_KEYS.USERS, []);
   if (!users.some((u) => u.name.toLowerCase() === 'demo student')) {
     users.push({ name: 'Demo Student', email: 'demo@campus.edu', password: 'password123', createdAt: new Date().toISOString() });
     safeWriteJSON(STORAGE_KEYS.USERS, users);
   }
+  syncUserProfileToPublicDb({ id: 'stu-demo', name: 'Demo Student', email: 'demo@campus.edu' });
 }
 
 async function detectBackendApi() {
@@ -71,6 +80,10 @@ function pushOrderToLocalSharedStore(order) {
     cd.orders.unshift({ id: order.orderId, customer: order.student.name, studentAccountName: order.studentAccountName, items: order.items.map((it) => ({ name: it.name, qty: it.qty, unitPrice: it.price, unitCost: Math.round(it.price * 45) / 100 })), total: order.total, status: 'Preparing', time: d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }), payment: order.paymentMethod === 'UPI' ? 'UPI' : 'Cash', paymentMethod: order.paymentMethod, paymentStatus: order.paymentStatus, day, source: 'user-web', student: order.student, estimatedMinutes: order.estimatedMinutes, dateTime: order.dateTime, receipt: order });
     safeWriteJSON(STORAGE_KEYS.SHARED_CANTEEN_DATA, cd);
   }
+  const hist = safeReadJSON(STORAGE_KEYS.HISTORY_DB, []).filter((h) => h.orderId !== order.orderId);
+  hist.unshift({ ...order, status: 'Preparing', createdAt: now, updatedAt: now });
+  safeWriteJSON(STORAGE_KEYS.HISTORY_DB, hist);
+  syncUserProfileToPublicDb({ name: order.studentAccountName, email: state.currentUser?.email || '', regNo: order.student.regNo, hostel: order.student.hostel, roomNo: order.student.roomNo, phone: order.student.phone, lastOrderAt: now });
 }
 
 async function sendOrderToCanteenBackend(order) {
@@ -98,7 +111,12 @@ async function pollUserNotifications() {
     const map = new Map(ords.map((o) => [String(o.id), o.status]));
     localOrders.forEach((o) => { const s = map.get(String(o.orderId)); if (s && o.status !== s) { o.status = s; changed = true; } });
   } else [...notifs].reverse().forEach((n) => { const o = localOrders.find((x) => String(x.orderId) === String(n.orderId)); if (o && n.status && o.status !== n.status) { o.status = n.status; changed = true; } });
-  if (changed) safeWriteJSON(STORAGE_KEYS.ORDERS, localOrders);
+  if (changed) {
+    safeWriteJSON(STORAGE_KEYS.ORDERS, localOrders);
+    const hist = safeReadJSON(STORAGE_KEYS.HISTORY_DB, []);
+    localOrders.forEach((o) => { const h = hist.find((x) => String(x.orderId) === String(o.orderId)); if (h && h.status !== o.status) { h.status = o.status; h.updatedAt = new Date().toISOString(); } });
+    safeWriteJSON(STORAGE_KEYS.HISTORY_DB, hist);
+  }
 
   const newly = state.notifInitialized ? notifs.filter((n) => !state.seenNotifIds.has(n.id)) : [];
   state.seenNotifIds = new Set(notifs.map((n) => n.id)); state.notifInitialized = true; state.userNotifications = notifs;
@@ -213,6 +231,7 @@ async function handleRegister(e) {
   if (users.some((u) => u.name.toLowerCase() === name.toLowerCase())) return showAuthFeedback('A student with this Name is already registered. Please Sign In.', 'error');
   if (users.some((u) => u.email.toLowerCase() === email)) return showAuthFeedback('This Email address is already registered. Please Sign In.', 'error');
   users.push({ name, email, password, createdAt: new Date().toISOString() }); safeWriteJSON(STORAGE_KEYS.USERS, users);
+  syncUserProfileToPublicDb({ name, email, createdAt: new Date().toISOString() });
   if (backendApiReachable) try { await fetch(`${backendApiBase}/api/students/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) }); } catch {}
   $('registerForm').reset(); switchAuthTab('signin'); $('loginName').value = name; $('loginPassword').focus();
   showAuthFeedback(`Registration successful for ${name}! Now Sign In with your Name & Password.`, 'success'); showToast('Campus account registered! Please sign in.', 'success');

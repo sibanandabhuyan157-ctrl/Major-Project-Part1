@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, reg_no TEXT NOT NULL DEFAULT '', hostel TEXT NOT NULL DEFAULT '', room_no TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, last_order_at TEXT NOT NULL DEFAULT '');
+CREATE VIEW IF NOT EXISTS admin_users_view AS SELECT id, name, email, reg_no, hostel, room_no, phone, created_at, last_order_at FROM users;

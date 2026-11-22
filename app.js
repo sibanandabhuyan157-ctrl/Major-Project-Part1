@@ -1,5 +1,7 @@
 const STORAGE_KEY = "canteenos-data-v1";
-const PAGE_TITLES = { overview: "Overview", orders: "Orders", notifications: "Notifications", menu: "Menu", inventory: "Inventory", reports: "Sales & reports" };
+const PAGE_TITLES = { overview: "Overview", orders: "Orders", notifications: "Notifications", menu: "Menu", inventory: "Inventory", users: "User Database", reports: "Sales & reports" };
+const USERS_DB_KEY = "canteenos-users-db-v1", HISTORY_DB_KEY = "canteenos-order-history-v1";
+let adminUsersCache = [], orderHistoryCache = [], historyFilterStudent = "";
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 const seedData = {
@@ -281,13 +283,81 @@ function renderReports() {
 const renderNotifications = () => window.CanteenNotifications ? window.CanteenNotifications.renderNotificationsView() : emptyState("🔔", "Notifications unavailable", "Could not load the notifications module.");
 function updateNotificationBadge() { const b = document.querySelector("#nav-notif-count"); if (!b || !window.CanteenNotifications) return; const c = window.CanteenNotifications.getUnreadCount(); b.textContent = c; b.classList.toggle("has-unread", c > 0); }
 
+function readLocalUsersAndHistory() {
+  const safe = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
+  const hist = safe(HISTORY_DB_KEY);
+  const rawUsers = safe(USERS_DB_KEY);
+  const stats = new Map();
+  hist.forEach((h) => { const k = String(h.studentAccountName || h.student?.name || "").toLowerCase(); const s = stats.get(k) || { c: 0, t: 0 }; s.c++; s.t += Number(h.total || 0); stats.set(k, s); });
+  // Explicitly allowlist non-sensitive fields only (password is never read or displayed)
+  const users = rawUsers.map((u) => {
+    const st = stats.get(String(u.name || "").toLowerCase()) || { c: 0, t: 0 };
+    return { id: u.id || "", name: u.name || "", email: u.email || "", regNo: u.regNo || "", hostel: u.hostel || "", roomNo: u.roomNo || "", phone: u.phone || "", createdAt: u.createdAt || "", lastOrderAt: u.lastOrderAt || "", orderCount: st.c, totalSpent: st.t };
+  });
+  return { users, history: hist };
+}
+
+async function loadUsersAndHistory() {
+  if (serverApiEnabled) {
+    try {
+      const [ru, rh] = await Promise.all([fetch("/api/admin/users"), fetch("/api/order-history")]);
+      if (ru.ok && rh.ok) {
+        const ud = await ru.json(), hd = await rh.json();
+        adminUsersCache = Array.isArray(ud.users) ? ud.users : [];
+        orderHistoryCache = Array.isArray(hd.history) ? hd.history : [];
+        if (activePage === "users") renderUsersDbTables();
+        return;
+      }
+    } catch {}
+  }
+  const loc = readLocalUsersAndHistory();
+  adminUsersCache = loc.users; orderHistoryCache = loc.history;
+  if (activePage === "users") renderUsersDbTables();
+}
+
+function renderUsersDb() {
+  const spent = orderHistoryCache.reduce((s, h) => s + Number(h.total || 0), 0);
+  return `${heading("User Database & Order History", "Access registered student profiles and saved order history. Passwords are encrypted and blocked from administrator access.")}
+    <div class="stats-grid notif-stats-grid">
+      <article class="stat-card"><div class="stat-top"><span>Registered Users</span><span class="stat-icon">👥</span></div><div class="stat-value" id="udb-user-count">${adminUsersCache.length}</div><div class="stat-note">Stored in separate Users DB</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Saved Order History</span><span class="stat-icon">🧾</span></div><div class="stat-value" id="udb-hist-count">${orderHistoryCache.length}</div><div class="stat-note">Stored in Order History DB</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Total History Value</span><span class="stat-icon">₹</span></div><div class="stat-value" id="udb-hist-total">${money(spent)}</div><div class="stat-note">Across all recorded student orders</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Password Security</span><span class="stat-icon">🔒</span></div><div class="stat-value" style="font-size:16px;color:var(--green)">Protected</div><div class="stat-note">Admin cannot access passwords</div></article>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px"><label class="search-box"><span>⌕</span><input id="user-db-search" placeholder="Search name, email, reg no, hostel" aria-label="Search user database"></label><button class="button secondary small" data-action="refresh-users-db">↻ Refresh</button></div>
+    <section class="data-panel" id="users-db-table" style="margin-bottom:20px"></section>
+    <section class="panel" id="order-history-panel"></section>`;
+}
+
+function renderUsersDbTables() {
+  const q = (document.querySelector("#user-db-search")?.value || "").trim().toLowerCase();
+  const uc = document.querySelector("#udb-user-count"), hc = document.querySelector("#udb-hist-count"), ht = document.querySelector("#udb-hist-total");
+  if (uc) uc.textContent = adminUsersCache.length;
+  if (hc) hc.textContent = orderHistoryCache.length;
+  if (ht) ht.textContent = money(orderHistoryCache.reduce((s, h) => s + Number(h.total || 0), 0));
+
+  const users = adminUsersCache.filter((u) => `${u.name} ${u.email} ${u.regNo} ${u.hostel} ${u.roomNo} ${u.phone}`.toLowerCase().includes(q));
+  const uEl = document.querySelector("#users-db-table");
+  if (uEl) {
+    uEl.innerHTML = users.length ? `<div class="table-wrap"><table><thead><tr><th>Student</th><th>Reg No.</th><th>Hostel &amp; Room</th><th>Phone</th><th>Orders / Spent</th><th>Password</th><th>History</th></tr></thead><tbody>${users.map((u) => `<tr><td class="cell-strong">${escapeHtml(u.name)}<span class="cell-sub">${escapeHtml(u.email)}</span></td><td>${escapeHtml(u.regNo || "—")}</td><td>${u.hostel ? `${escapeHtml(u.hostel)}${u.roomNo ? `, Room ${escapeHtml(u.roomNo)}` : ""}` : "—"}</td><td>${escapeHtml(u.phone || "—")}</td><td class="cell-strong">${u.orderCount || 0} orders<span class="cell-sub">${money(u.totalSpent || 0)}</span></td><td><span class="badge completed">🔒 Hidden (Protected)</span></td><td><button class="button secondary small" data-action="filter-user-history" data-student="${escapeHtml(u.name)}">View History</button></td></tr>`).join("")}</tbody></table></div>` : emptyState("👥", "No registered users found", "Registered students from User Web will appear here without password access.");
+  }
+
+  const hist = historyFilterStudent ? orderHistoryCache.filter((h) => String(h.studentAccountName || h.student?.name || "").toLowerCase() === historyFilterStudent.toLowerCase()) : orderHistoryCache;
+  const hEl = document.querySelector("#order-history-panel");
+  if (hEl) {
+    const hdr = `<div class="panel-header"><h2>Saved Order History ${historyFilterStudent ? `— ${escapeHtml(historyFilterStudent)}` : "(All Students)"}</h2>${historyFilterStudent ? `<button class="panel-link" data-action="clear-history-filter">Show all orders →</button>` : `<span class="category-tag">${hist.length} record${hist.length === 1 ? "" : "s"}</span>`}</div>`;
+    hEl.innerHTML = hdr + (hist.length ? `<div class="table-wrap"><table><thead><tr><th>Order ID</th><th>Student</th><th>Delivery Address</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>${hist.map((h) => `<tr><td class="cell-strong">#${escapeHtml(h.orderId)}</td><td class="cell-strong">${escapeHtml(h.student?.name || h.studentAccountName || "—")}<span class="cell-sub">${escapeHtml(h.student?.regNo || "")}</span></td><td>${escapeHtml(h.student?.fullAddress || "—")}</td><td>${escapeHtml((h.items || []).map((i) => `${i.name} × ${i.qty}`).join(", "))}</td><td>${escapeHtml(h.paymentStatus || h.paymentMethod || "—")}</td><td class="cell-strong">${money(h.total)}</td><td>${statusBadge(h.status || "Preparing")}</td><td>${escapeHtml(h.dateTime || h.createdAt || "")}</td></tr>`).join("")}</tbody></table></div>` : emptyState("🧾", "No saved order history yet", "Confirmed student orders are saved permanently in the Order History database."));
+  }
+}
+
 function renderPage() {
-  const map = { overview: renderOverview, orders: renderOrders, notifications: renderNotifications, menu: renderMenu, inventory: renderInventory, reports: renderReports };
+  const map = { overview: renderOverview, orders: renderOrders, notifications: renderNotifications, menu: renderMenu, inventory: renderInventory, users: renderUsersDb, reports: renderReports };
   pageContent.innerHTML = map[activePage]();
   document.querySelector("#nav-order-count").textContent = data.orders.filter((o) => ["Preparing", "Ready"].includes(o.status)).length;
   updateNotificationBadge();
   if (activePage === "orders") { renderOrdersTable(); document.querySelector("#order-search").addEventListener("input", renderOrdersTable); document.querySelector("#order-status").addEventListener("change", renderOrdersTable); }
   if (activePage === "menu") wireMenuCarousels();
+  if (activePage === "users") { document.querySelector("#user-db-search").addEventListener("input", renderUsersDbTables); renderUsersDbTables(); loadUsersAndHistory(); }
 }
 
 function openModal(title, subtitle, fields, submitLabel, onSubmit, cls = "") {
@@ -381,6 +451,9 @@ document.addEventListener("click", (e) => {
     window.CanteenNotifications?.updateOrderStatus(id, nx).then(() => { renderPage(); showToast(nx === "Completed" ? `Order #${id} completed! User bell notified: "The delivery coming near to the user".` : `Order #${id} marked ${nx}! Student notified.`); });
   } else if (action === "notif-filter") { window.CanteenNotifications?.setFilter(ab.dataset.filter || "All"); renderPage(); }
   else if (action === "notif-mark-all-read") { window.CanteenNotifications?.markAllRead().then(() => { renderPage(); showToast("All order receipt notifications marked as read."); }); }
+  else if (action === "filter-user-history") { historyFilterStudent = ab.dataset.student || ""; renderUsersDbTables(); }
+  else if (action === "clear-history-filter") { historyFilterStudent = ""; renderUsersDbTables(); }
+  else if (action === "refresh-users-db") { loadUsersAndHistory().then(() => showToast("User database refreshed.")); }
   else if (action === "delete-menu") {
     const it = data.menu.find((x) => x.id === id); if (!it) return;
     if (data.orders.some((o) => o.status !== "Cancelled" && getOrderItems(o).some((x) => x.name === it.name))) return showToast("This item has order history and can't be removed.");
@@ -414,6 +487,6 @@ window.CanteenNotifications?.startPolling({
     updateNotificationBadge();
     document.querySelector("#nav-order-count").textContent = data.orders.filter((o) => ["Preparing", "Ready"].includes(o.status)).length;
     if (newlyArrived.length) showToast(`🔔 New Order Receipt #${newlyArrived[0].orderId} from ${newlyArrived[0].customerName} (${money(newlyArrived[0].total)})!`);
-    if ((changed || oc) && modalBackdrop.hidden) { if (activePage === "notifications" || activePage === "overview") renderPage(); else if (activePage === "orders") renderOrdersTable(); }
+    if ((changed || oc) && modalBackdrop.hidden) { if (activePage === "notifications" || activePage === "overview") renderPage(); else if (activePage === "orders") renderOrdersTable(); else if (activePage === "users") loadUsersAndHistory(); }
   }
 });

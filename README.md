@@ -9,7 +9,10 @@
 
 `Major Project Part 1` (Admin Dashboard & Notifications Page) and `User Web` (Student Ordering Portal) share the same backend API and database:
 
-- **SQLite Database Schema:** `database/schema.sql` (and mirrored in `../User Web/database/schema.sql`)
+- **Separate Databases (SQLite / Java JSON):**
+  - `database/schema.sql` (`canteen.sqlite`) — Menu, active orders, inventory, purchases, notifications
+  - `database/users-schema.sql` (`users.sqlite` / `users-db.json`) — Separate **User Details Database** with hashed passwords + `admin_users_view` so the Administrator can view student details **without password access**
+  - `database/order-history-schema.sql` (`order-history.sqlite` / `order-history-db.json`) — Separate **Order History Database** saving every confirmed order and its status history
 - **PHP + SQLite Backend:** `api.php` & `router.php` (plus `../User Web/api.php` & `../User Web/router.php`)
 - **Java Backend:** `CanteenServer.java` (plus `../User Web/UserWebServer.java`)
 - **Frontend JS:** `app.js`, `notifications.js`, and `../User Web/user-app.js`
