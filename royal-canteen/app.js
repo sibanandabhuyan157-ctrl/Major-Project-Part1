@@ -7,6 +7,10 @@ const PAGE_TITLES = {
   inventory: "Inventory",
   reports: "Sales & reports"
 };
+const MANAGED_CATEGORIES = ["Breakfast", "Meals", "Snacks", "Desserts", "Non-Veg", "Drinks"];
+const DEFAULT_CATEGORY_AVAILABILITY = Object.fromEntries(MANAGED_CATEGORIES.map((category) => [
+  category, { enabled: true, start: "00:00", end: "23:59" }
+]));
 const seedData = {
   menu: [
     { id: "m1", name: "Masala Dosa", category: "Breakfast", price: 65, costPerServing: 24, emoji: "🥞", description: "Crispy dosa with potato masala" },
@@ -181,6 +185,7 @@ const seedData = {
     { id: "i60", name: "Chickpeas", unit: "kg", stock: 5, minimum: 2, unitCost: 100, category: "Grains" }
   ],
   purchases: [],
+  categoryAvailability: structuredClone(DEFAULT_CATEGORY_AVAILABILITY),
   menuDefaultsVersion: 5,
   inventoryDefaultsVersion: 1
 };
@@ -257,6 +262,15 @@ function loadData() {
       };
     });
     if (!Array.isArray(parsed.purchases)) parsed.purchases = [];
+    parsed.categoryAvailability = Object.fromEntries(MANAGED_CATEGORIES.map((category) => {
+      const saved = parsed.categoryAvailability?.[category];
+      const validTime = (time) => typeof time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+      return [category, {
+        enabled: typeof saved?.enabled === "boolean" ? saved.enabled : true,
+        start: validTime(saved?.start) ? saved.start : "00:00",
+        end: validTime(saved?.end) ? saved.end : "23:59"
+      }];
+    }));
     return parsed;
   } catch (error) {
     console.error("Could not load saved canteen data:", error);
@@ -271,6 +285,7 @@ let customerSearch = "";
 const customerCart = new Map();
 let activeHeroSlide = 0;
 let heroSlideTimer;
+let categoryAvailabilityTimer;
 let toastTimer;
 let serverSync = Promise.resolve();
 const serverApiEnabled = window.location.protocol !== "file:" &&
@@ -483,6 +498,15 @@ function renderOrdersTable() {
 
 function renderMenu() {
   const categories = [...new Set(data.menu.map((item) => item.category))];
+  const scheduleCards = MANAGED_CATEGORIES.map((category) => {
+    const availability = data.categoryAvailability[category];
+    const available = isCategoryAvailable(category);
+    return `<article class="category-schedule-card">
+      <div class="category-schedule-heading"><strong>${category}</strong><span class="badge ${available ? "completed" : "cancelled"}">${available ? "Available now" : "Unavailable now"}</span></div>
+      <label class="category-enable"><input type="checkbox" data-category-setting="${category}" data-setting-field="enabled"${availability.enabled ? " checked" : ""}> Enable category</label>
+      <div class="category-time-fields"><label>From<input type="time" value="${availability.start}" data-category-setting="${category}" data-setting-field="start"></label><label>Until<input type="time" value="${availability.end}" data-category-setting="${category}" data-setting-field="end"></label></div>
+    </article>`;
+  }).join("");
   const imageForItem = (item) => menuImage(item.name);
   const cards = data.menu.map((item) => `<article class="menu-card">
     <div class="menu-card-top">${imageForItem(item) ? `<img class="menu-photo" src="${imageForItem(item)}" alt="${escapeHtml(item.name)}">` : `<span class="menu-emoji">${escapeHtml(item.emoji)}</span>`}<div class="menu-actions"><button class="icon-button" title="Edit ${escapeHtml(item.name)}" aria-label="Edit ${escapeHtml(item.name)}" data-action="edit-menu" data-id="${escapeHtml(item.id)}">✎</button><button class="icon-button" title="Remove ${escapeHtml(item.name)}" aria-label="Remove ${escapeHtml(item.name)}" data-action="delete-menu" data-id="${escapeHtml(item.id)}">×</button></div></div>
@@ -490,7 +514,23 @@ function renderMenu() {
     <div class="menu-card-bottom"><span class="menu-price">${money(item.price)}</span><span class="category-tag">${escapeHtml(item.category)}</span></div>
   </article>`).join("");
   return `${heading("Menu", "Manage the dishes and drinks available at your canteen.", `<button class="button" data-action="new-menu-item">＋ Add item</button>`)}
+    <section class="category-schedule-panel"><div class="category-schedule-intro"><div><h2>Category availability</h2><p>Set daily service hours. End times are inclusive; overnight hours are supported. Use the same time for all-day availability.</p></div></div><div class="category-schedule-grid">${scheduleCards}</div></section>
     ${categories.length ? `<div class="menu-grid">${cards}</div>` : emptyState("🍽️", "Your menu is empty", "Add an item to start building your menu.")}`;
+}
+
+function isCategoryAvailable(category, at = new Date()) {
+  if (!MANAGED_CATEGORIES.includes(category)) return true;
+  const availability = data.categoryAvailability[category];
+  if (!availability?.enabled) return false;
+  const [startHour, startMinute] = availability.start.split(":").map(Number);
+  const [endHour, endMinute] = availability.end.split(":").map(Number);
+  const currentMinutes = at.getHours() * 60 + at.getMinutes();
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+  if (start === end) return true;
+  return start < end
+    ? currentMinutes >= start && currentMinutes <= end
+    : currentMinutes >= start || currentMinutes <= end;
 }
 
 function menuImage(name) {
@@ -606,6 +646,7 @@ function menuImage(name) {
 function renderCustomerCards() {
   const search = customerSearch.trim().toLowerCase();
   const items = data.menu.filter((item) =>
+    isCategoryAvailable(item.category) &&
     (customerCategory === "All categories" || item.category === customerCategory) &&
     `${item.name} ${item.description || ""}`.toLowerCase().includes(search)
   );
@@ -635,6 +676,36 @@ function renderCustomerCards() {
   container.innerHTML = sections || emptyState("⌕", "No dishes found", "Try another search or category.");
 }
 
+function refreshCustomerAvailability() {
+  const availableCategories = [...new Set(data.menu
+    .filter((item) => isCategoryAvailable(item.category))
+    .map((item) => item.category))];
+  if (customerCategory !== "All categories" && !availableCategories.includes(customerCategory)) {
+    customerCategory = "All categories";
+  }
+  const categorySelect = document.querySelector("#customer-category");
+  if (categorySelect) {
+    categorySelect.innerHTML = ["All categories", ...availableCategories]
+      .map((category) => `<option${customerCategory === category ? " selected" : ""}>${escapeHtml(category)}</option>`)
+      .join("");
+  }
+  const menuCount = document.querySelector(".menu-count");
+  if (menuCount) {
+    menuCount.textContent = `${data.menu.filter((item) => isCategoryAvailable(item.category)).length} items`;
+  }
+  renderCustomerCards();
+  renderCustomerCart();
+}
+
+function scheduleCategoryAvailabilityRefresh() {
+  const now = new Date();
+  const delay = 60_000 - now.getSeconds() * 1_000 - now.getMilliseconds();
+  categoryAvailabilityTimer = setTimeout(() => {
+    refreshCustomerAvailability();
+    scheduleCategoryAvailabilityRefresh();
+  }, delay);
+}
+
 function renderCustomerCart() {
   const container = document.querySelector("#customer-cart");
   if (!container) return;
@@ -642,16 +713,20 @@ function renderCustomerCart() {
     item: data.menu.find((entry) => entry.id === id),
     quantity
   })).filter((entry) => entry.item);
+  const unavailableItems = items.filter(({ item }) => !isCategoryAvailable(item.category));
   const count = items.reduce((sum, entry) => sum + entry.quantity, 0);
   const total = items.reduce((sum, entry) => sum + Number(entry.item.price) * entry.quantity, 0);
   container.innerHTML = `<div class="cart-heading"><div><span class="eyebrow">Your order</span><h2>Cart <span>${count}</span></h2></div><span class="cart-bag">▤</span></div>
-    ${items.length ? `<div class="cart-lines">${items.map(({ item, quantity }) => `<div class="cart-line"><div><strong>${escapeHtml(item.name)}</strong><span>${money(item.price)} each</span></div><div class="quantity-control"><button data-action="customer-remove" data-id="${escapeHtml(item.id)}" aria-label="Remove one ${escapeHtml(item.name)}">−</button><span>${quantity}</span><button data-action="customer-add" data-id="${escapeHtml(item.id)}" aria-label="Add one ${escapeHtml(item.name)}">+</button></div></div>`).join("")}</div>
-      <div class="cart-total"><span>Total</span><strong>${money(total)}</strong></div><button class="button cart-checkout" data-action="customer-checkout">Continue to checkout <span>→</span></button><p class="cart-note">Pay by UPI, cash or card at checkout.</p>`
+    ${items.length ? `<div class="cart-lines">${items.map(({ item, quantity }) => `<div class="cart-line"><div><strong>${escapeHtml(item.name)}</strong><span>${money(item.price)} each${isCategoryAvailable(item.category) ? "" : " · unavailable now"}</span></div><div class="quantity-control"><button data-action="customer-remove" data-id="${escapeHtml(item.id)}" aria-label="Remove one ${escapeHtml(item.name)}">−</button><span>${quantity}</span><button data-action="customer-add" data-id="${escapeHtml(item.id)}" aria-label="Add one ${escapeHtml(item.name)}"${isCategoryAvailable(item.category) ? "" : " disabled"}>+</button></div></div>`).join("")}</div>
+      ${unavailableItems.length ? `<p class="cart-unavailable">Some items are unavailable at this time. Remove them to continue.</p>` : ""}
+      <div class="cart-total"><span>Total</span><strong>${money(total)}</strong></div><button class="button cart-checkout" data-action="customer-checkout"${unavailableItems.length ? " disabled" : ""}>Continue to checkout <span>→</span></button><p class="cart-note">Pay by UPI, cash or card at checkout.</p>`
       : `<div class="cart-empty"><span>＋</span><strong>Your cart is waiting</strong><p>Add something delicious from the menu.</p></div><button class="button cart-checkout" disabled>Choose your food</button>`}`;
 }
 
 function renderCustomer() {
-  const categories = ["All categories", ...new Set(data.menu.map((item) => item.category))];
+  const categories = ["All categories", ...new Set(data.menu
+    .filter((item) => isCategoryAvailable(item.category))
+    .map((item) => item.category))];
   const heroSlides = [
     { image: "MuttonBiryani.jpg", name: "Mutton Biryani" },
     { image: "ChickenBriyani.jpg", name: "Chicken Biryani" },
@@ -773,6 +848,10 @@ function renderPage() {
       customerCategory = event.currentTarget.value;
       renderCustomerCards();
     });
+    clearTimeout(categoryAvailabilityTimer);
+    scheduleCategoryAvailabilityRefresh();
+  } else {
+    clearTimeout(categoryAvailabilityTimer);
   }
   if (activePage === "orders") {
     renderOrdersTable();
@@ -807,6 +886,14 @@ function startHeroSlideShow() {
 
 function customerCheckoutModal() {
   if (!customerCart.size) return;
+  const unavailableCartItems = [...customerCart.keys()].map((id) =>
+    data.menu.find((entry) => entry.id === id)
+  ).filter((item) => item && !isCategoryAvailable(item.category));
+  if (unavailableCartItems.length) {
+    showToast("Remove currently unavailable items before checking out.");
+    renderCustomerCart();
+    return;
+  }
   const items = [...customerCart.entries()].map(([id, qty]) => {
     const item = data.menu.find((entry) => entry.id === id);
     return item ? { name: item.name, qty, unitPrice: Number(item.price), unitCost: hasCost(item.costPerServing) ? Number(item.costPerServing) : null } : null;
@@ -818,9 +905,17 @@ function customerCheckoutModal() {
   openModal("Complete your order", "Enter your name and choose how you'd like to pay.", `
     <div class="field"><label for="customer-name">Your name</label><input id="customer-name" name="customer" required maxlength="60" placeholder="e.g. Ananya Shah"></div>
     <div class="field"><label for="customer-payment">Payment method</label><select id="customer-payment" name="payment"><option>UPI</option><option>Cash</option><option>Card</option></select></div>
+    <div class="upi-qr" id="upi-qr"><img src="QRcode.jpg.jpeg" alt="UPI payment QR code"><p>Scan this QR code with your UPI app to pay.</p></div>
     <div class="checkout-summary"><span>${items.reduce((sum, item) => sum + item.qty, 0)} item(s)</span><strong>${money(items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0))}</strong></div>`, "Place order", (formData) => {
       const customer = String(formData.get("customer")).trim();
       if (!customer) return false;
+      if ([...customerCart.keys()].some((id) => {
+        const item = data.menu.find((entry) => entry.id === id);
+        return item && !isCategoryAvailable(item.category);
+      })) {
+        showToast("A menu category is no longer available. Close checkout and update your cart.");
+        return false;
+      }
       const now = new Date();
       const nextId = String(Math.max(1000, ...data.orders.map((order) => Number(order.id) || 0)) + 1);
       data.orders.unshift({
@@ -838,6 +933,12 @@ function customerCheckoutModal() {
       showToast(`Order #${nextId} placed successfully.`);
       return true;
     });
+  const paymentSelect = modal.querySelector("#customer-payment");
+  const qrCode = modal.querySelector("#upi-qr");
+  qrCode.hidden = paymentSelect.value !== "UPI";
+  paymentSelect.addEventListener("change", () => {
+    qrCode.hidden = paymentSelect.value !== "UPI";
+  });
 }
 
 function openModal(title, subtitle, fields, submitLabel, onSubmit, modalClass = "") {
@@ -1073,6 +1174,12 @@ document.addEventListener("click", (event) => {
     });
   }
   if (action === "customer-add") {
+    const item = data.menu.find((entry) => entry.id === id);
+    if (!item || !isCategoryAvailable(item.category)) {
+      showToast("This category is not available right now.");
+      refreshCustomerAvailability();
+      return;
+    }
     const quantity = customerCart.get(id) || 0;
     if (quantity >= 99) {
       showToast("You can add up to 99 of each item.");
@@ -1131,6 +1238,23 @@ document.addEventListener("click", (event) => {
       showToast(`${item.name} removed from the menu.`);
     }
   }
+});
+
+document.addEventListener("change", (event) => {
+  const setting = event.target.closest("[data-category-setting]");
+  if (!setting) return;
+  const { categorySetting: category, settingField } = setting.dataset;
+  if (!MANAGED_CATEGORIES.includes(category) || !["enabled", "start", "end"].includes(settingField)) return;
+  const availability = data.categoryAvailability[category];
+  const previous = { ...availability };
+  availability[settingField] = settingField === "enabled" ? setting.checked : setting.value;
+  if (!saveData()) {
+    Object.assign(availability, previous);
+    renderPage();
+    return;
+  }
+  renderPage();
+  showToast(`${category} availability updated.`);
 });
 
 modalBackdrop.addEventListener("click", (event) => {

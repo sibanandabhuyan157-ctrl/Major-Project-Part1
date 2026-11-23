@@ -14,7 +14,9 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Keep the te
 
 The PHP API stores menu items, orders, inventory, purchases, and app settings in `database/canteen.sqlite`, using the schema in `database/schema.sql`. The database and tables are created automatically when the app is first used.
 
-The administrator dashboard opens at `index.html`. The separate customer ordering site is available at `customer.html` (or `https://<username>.github.io/<repository>/customer.html` on GitHub Pages). The **Customer site** dashboard link opens it in a new tab. Customers can browse category-based, horizontally sliding menu rows, filter the menu, add dishes to their cart, and place orders. The customer site does not display a link to the admin dashboard. Menu photos are matched to the provided JPG files by dish name.
+The administrator dashboard opens at `index.html`. In **Menu → Category availability**, enable or disable Breakfast, Meals, Snacks, and Desserts and set each category's daily service hours. The customer menu hides categories outside their enabled time windows; overnight hours are supported, and identical start/end times mean all-day availability. When customers choose UPI at checkout, the canteen's QR code is displayed.
+
+The separate customer ordering site is available at `customer.html` (or `https://<username>.github.io/<repository>/customer.html` on GitHub Pages). The **Customer site** dashboard link opens it in a new tab. Customers can browse category-based, horizontally sliding menu rows, filter the menu, add dishes to their cart, and place orders. The customer site does not display a link to the admin dashboard. Menu photos are matched to the provided JPG files by dish name.
 
 ## Run with the Java backend
 
